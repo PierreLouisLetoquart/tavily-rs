@@ -1,6 +1,7 @@
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
+/// The response from the API when a search is made. [more info](https://docs.tavily.com/docs/tavily-api/rest_api#response)
 pub struct SearchResponse {
     pub answer: Option<String>,
     pub query: String,
@@ -11,6 +12,7 @@ pub struct SearchResponse {
 }
 
 #[derive(Debug, Deserialize)]
+/// The result type contained in the response. [more info](https://docs.tavily.com/docs/tavily-api/rest_api#response)
 pub struct SearchResult {
     pub title: String,
     pub url: String,

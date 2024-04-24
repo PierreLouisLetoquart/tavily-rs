@@ -1,27 +1,92 @@
-# Tavily Rust Library
+# Tavily Rust SDK
 
-This library provides an unofficial Rust binding for the Tavily Search API. It allows you to easily perform search queries and handle responses.
+The Tavily Rust SDK is a library for interacting with the Tavily Search API. With just a few lines of code, you can perform simple or advanced search queries, customize your search options, and get relevant search results powered by LLMs 🚀.
 
-Here's a simple example of how to use the library:
+> **Note:** Required an [api key](https://app.tavily.com/home)
+
+## Functions
+
+The Tavily Rust SDK provides three main functions:
+
+- `search`: Perform a simple search query with a single argument, `query`.
 
 ```rust
-use tavily::{search, SearchRequest};
+let response = tavily.search("your search query").await?;
+```
 
+- `answer`: Perform an advanced search query that includes an answer to your query. This function takes a bit more time than the simple search.
+
+```rust
+let response = tavily.answer("your search query").await?;
+```
+
+- `call`: Perform a custom search query using the `SearchRequest` struct. This struct provides a range of options for customizing your search, including search depth, whether to include images or raw content, and which domains to include or exclude.
+
+```rust
+let mut request = SearchRequest::new("your api key", "your search query");
+request.search_depth("advanced");
+request.include_answer(true);
+request.include_images(true);
+request.include_raw_content(true);
+request.max_results(10);
+request.include_domains(vec!["example.com".to_string()]);
+request.exclude_domains(vec!["example.org".to_string()]);
+
+let response = tavily.call(&request).await?;
+```
+
+## Getting Started
+
+To get started with the Tavily Rust SDK, add the following to your `Cargo.toml` file:
+
+```txt
+[dependencies]
+tavily = "^1.0.0"
+```
+
+Then, import the library in your Rust code:
+
+```rust
+use tavily::{Tavily, SearchRequest, SearchResponse};
+```
+
+Here's a simple example of how to use the library to perform a search query:
+
+```rust
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let request = SearchRequest {
-        api_key: "your_api_key".to_string(),
-        query: "your_search_query".to_string(),
-        search_depth: Some("basic".to_string()),
-        include_answer: Some(false),
-        include_images: Some(true),
-        include_raw_content: Some(false),
-        max_results: Some(5),
-        include_domains: Some(vec![]),
-        exclude_domains: Some(vec![]),
-    };
+    let api_key = "your_api_key";
+    let query = "your_search_query";
 
-    let response = search(request).await?;
+    let tavily = Tavily::new(api_key);
+    let response = tavily.search(query).await?;
+
+    println!("{:#?}", response);
+
+    Ok(())
+}
+```
+
+You can also customize the search options by using the `SearchRequest` struct:
+
+```rust
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let api_key = "your_api_key";
+    let query = "your_search_query";
+
+    let mut request = SearchRequest::new(api_key, query);
+    request.search_depth("advanced");
+    request.include_answer(true);
+    request.include_images(true);
+    request.include_raw_content(true);
+    request.max_results(10);
+    request.include_domains(vec!["example.com".to_string()]);
+    request.exclude_domains(vec!["example.org".to_string()]);
+
+    let tavily = Tavily::new(api_key);
+    let response = tavily.call(&request).await?;
+
     println!("{:#?}", response);
 
     Ok(())
@@ -30,13 +95,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Error Codes
 
-The Tavily Search API may return various HTTP status codes. For a complete list and their meanings, please refer to the [official doc](https://docs.tavily.com/docs/tavily-api/rest_api#error-codes).
+The Tavily Search API may return various HTTP status codes. For a complete list and their meanings, please refer to the [official documentation](https://docs.tavily.com/docs/tavily-api/rest_api#error-codes).
 
 ## Disclaimer
 
-This is an unofficial binding for the Tavily Search API. For the official documentation and support, please visit [Tavily Search API](https://tavily.com).
+This is an unofficial SDK for the Tavily Search API. For the official documentation and support, please visit [Tavily Search API](https://tavily.com).
 
 ## License
 
 MIT
-
