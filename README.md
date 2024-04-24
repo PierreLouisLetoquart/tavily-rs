@@ -39,7 +39,7 @@ let response = tavily.call(&request).await?;
 
 To get started with the Tavily Rust SDK, add the following to your `Cargo.toml` file:
 
-```txt
+```rust
 [dependencies]
 tavily = "^1.0.0"
 ```
