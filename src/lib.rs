@@ -4,7 +4,7 @@
 //!
 //! Import the library and create a new instance of `Tavily` with your API key.
 //!
-//! ```rust
+//! ```rust,ignore
 //! use tavily::Tavily;
 //!
 //! let tavily = Tavily::new("your api key");
@@ -14,19 +14,19 @@
 //!
 //! - `search`: Quick search with a query string.
 //!
-//! ```rust
+//! ```rust,ignore
 //! let response = tavily.search("your search query").await?;
 //! ```
 //!
 //! - `answer`: Advanced search with query and answer.
 //!
-//! ```rust
+//! ```rust,ignore
 //! let response = tavily.answer("your search query").await?;
 //! ```
 //!
 //! - `call`: Custom search with various options using `SearchRequest`.
 //!
-//! ```rust
+//! ```rust,ignore
 //! use tavily::SearchRequest;
 //!
 //! let mut request = SearchRequest::new("your api key", "your search query");
