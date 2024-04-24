@@ -1,5 +1,8 @@
 use reqwest::Client;
 
+use crate::request::SearchRequest;
+use crate::response::SearchResponse;
+
 pub struct Tavily {
     api_key: String,
     client: Client,

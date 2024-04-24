@@ -2,6 +2,16 @@
 //!
 //! The Tavily Rust SDK simplifies interaction with the Tavily Search API, offering three main functions:
 //!
+//! Import the library and create a new instance of `Tavily` with your API key.
+//!
+//! ```rust
+//! use tavily::Tavily;
+//!
+//! let tavily = Tavily::new("your api key");
+//! ```
+//!
+//! The `Tavily` instance provides three main functions:
+//!
 //! - `search`: Quick search with a query string.
 //!
 //! ```rust
@@ -17,6 +27,8 @@
 //! - `call`: Custom search with various options using `SearchRequest`.
 //!
 //! ```rust
+//! use tavily::SearchRequest;
+//!
 //! let mut request = SearchRequest::new("your api key", "your search query");
 //! request.search_depth("advanced");
 //! request.include_answer(true);
