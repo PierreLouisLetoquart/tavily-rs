@@ -1,54 +1,41 @@
+//! # Tavily Rust SDK
+//!
+//! The Tavily Rust SDK simplifies interaction with the Tavily Search API, offering three main functions:
+//!
+//! - `search`: Quick search with a query string.
+//!
+//! ```rust
+//! let response = tavily.search("your search query").await?;
+//! ```
+//!
+//! - `answer`: Advanced search with query and answer.
+//!
+//! ```rust
+//! let response = tavily.answer("your search query").await?;
+//! ```
+//!
+//! - `call`: Custom search with various options using `SearchRequest`.
+//!
+//! ```rust
+//! let mut request = SearchRequest::new("your api key", "your search query");
+//! request.search_depth("advanced");
+//! request.include_answer(true);
+//! request.include_images(true);
+//! request.include_raw_content(true);
+//! request.max_results(10);
+//! request.include_domains(vec!["example.com".to_string()]);
+//! request.exclude_domains(vec!["example.org".to_string()]);
+//!
+//! let response = tavily.call(&request).await?;
+//! ```
+//!
+//! ## Learn more
+//!
+//! For examples, error codes and licensing, refer to the [repository](https://github.com/PierreLouisLetoquart/tavily-rs).
+mod client;
 mod request;
 mod response;
 
+pub use client::Tavily;
 pub use request::SearchRequest;
 pub use response::{SearchResponse, SearchResult};
-
-use reqwest::Client;
-
-pub struct Tavily {
-    api_key: String,
-    client: Client,
-}
-
-impl Tavily {
-    pub fn new(api_key: &str) -> Self {
-        Self {
-            api_key: api_key.into(),
-            client: Client::new(),
-        }
-    }
-
-    async fn call_api(&self, request: &SearchRequest) -> Result<SearchResponse, reqwest::Error> {
-        let url = "https://api.tavily.com/search";
-
-        let response = self
-            .client
-            .post(url)
-            .json(request)
-            .send()
-            .await?
-            .json::<SearchResponse>()
-            .await?;
-
-        Ok(response)
-    }
-
-    pub async fn call(&self, body: &SearchRequest) -> Result<SearchResponse, reqwest::Error> {
-        let response = self.call_api(&body).await?;
-        Ok(response)
-    }
-
-    pub async fn search(&self, query: &str) -> Result<SearchResponse, reqwest::Error> {
-        let request = SearchRequest::new(&self.api_key, query);
-        let response = Self::call_api(&self, &request).await?;
-        Ok(response)
-    }
-
-    pub async fn answer(&self, query: &str) -> Result<SearchResponse, reqwest::Error> {
-        let mut request = SearchRequest::new(&self.api_key, query);
-        request.include_answer(true);
-        let response = Self::call_api(&self, &request).await?;
-        Ok(response)
-    }
-}

@@ -1,6 +1,39 @@
 # Tavily Rust SDK
 
-The Tavily Rust SDK is a powerful and easy-to-use library for interacting with the Tavily Search API 🚀
+The Tavily Rust SDK is a library for interacting with the Tavily Search API. With just a few lines of code, you can perform simple or advanced search queries, customize your search options, and get relevant search results powered by LLMs 🚀.
+
+> **Note:** Required an [api key](https://app.tavily.com/home)
+
+## Functions
+
+The Tavily Rust SDK provides three main functions:
+
+- `search`: Perform a simple search query with a single argument, `query`.
+
+```rust
+let response = tavily.search("your search query").await?;
+```
+
+- `answer`: Perform an advanced search query that includes an answer to your query. This function takes a bit more time than the simple search.
+
+```rust
+let response = tavily.answer("your search query").await?;
+```
+
+- `call`: Perform a custom search query using the `SearchRequest` struct. This struct provides a range of options for customizing your search, including search depth, whether to include images or raw content, and which domains to include or exclude.
+
+```rust
+let mut request = SearchRequest::new("your api key", "your search query");
+request.search_depth("advanced");
+request.include_answer(true);
+request.include_images(true);
+request.include_raw_content(true);
+request.max_results(10);
+request.include_domains(vec!["example.com".to_string()]);
+request.exclude_domains(vec!["example.org".to_string()]);
+
+let response = tavily.call(&request).await?;
+```
 
 ## Getting Started
 
