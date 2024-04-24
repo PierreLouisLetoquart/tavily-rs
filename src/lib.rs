@@ -1,14 +1,22 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+mod request;
+mod response;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use request::SearchRequest;
+pub use response::{SearchResponse, SearchResult};
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+use reqwest::Client;
+
+pub async fn search(request: SearchRequest) -> Result<SearchResponse, reqwest::Error> {
+    let client = Client::new();
+    let url = "https://api.tavily.com/search";
+
+    let response = client
+        .post(url)
+        .json(&request)
+        .send()
+        .await?
+        .json::<SearchResponse>()
+        .await?;
+
+    Ok(response)
 }
