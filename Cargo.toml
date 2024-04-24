@@ -3,11 +3,10 @@ name = "tavily"
 version = "0.1.0"
 edition = "2021"
 authors = ["Pierre-Louis Létoquart <randlgint@proton.me>"]
-description = "A minimal crate to send request to the tavily REST api"
+description = "A tiny tool for calling Tavily's REST API in the simplest way!"
 license = "MIT"
-homepage = ""
-repository = ""
-keywords = []
+repository = "https://github.com/PierreLouisLetoquart/tavily-rs"
+keywords = ["Tavily", "search-engine", "web-browser", "llm-search", "rag"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
