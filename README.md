@@ -2,17 +2,6 @@
 
 This library provides an unofficial Rust binding for the Tavily Search API. It allows you to easily perform search queries and handle responses.
 
-## Installation
-
-Add the following to your `Cargo.toml` file:
-
-```toml
-[dependencies]
-tavily = "0.1.0"
-```
-
-## Usage
-
 Here's a simple example of how to use the library:
 
 ```rust
