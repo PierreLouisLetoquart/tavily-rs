@@ -104,3 +104,11 @@ This is an unofficial SDK for the Tavily Search API. For the official documentat
 ## License
 
 MIT
+
+## TODO (for august 2024)
+
+- [ ] Detailed todo list with subtasks.
+
+- [ ] Check the latest version of the Tavily API and update the SDK accordingly.
+- [ ] Add more examples and use cases to the README.
+- [ ] Write tests.

@@ -5,7 +5,7 @@ use crate::response::SearchResponse;
 
 pub struct Tavily {
     api_key: String,
-    client: Client,
+    client: Client, // TODO: try to find a smarter way to handle the client
 }
 
 impl Tavily {
@@ -17,7 +17,7 @@ impl Tavily {
     }
 
     async fn call_api(&self, request: &SearchRequest) -> Result<SearchResponse, reqwest::Error> {
-        let url = "https://api.tavily.com/search";
+        let url = "https://api.tavily.com/search"; // TODO: Move to config or whatever...
 
         let response = self
             .client
