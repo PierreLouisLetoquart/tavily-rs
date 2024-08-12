@@ -107,8 +107,10 @@ This is an unofficial SDK for the Tavily Search API. For the official documentat
 
 ## TODO (for august 2024)
 
+- check new beta RAG feature [here](https://docs.tavily.com/docs/python-sdk/tavily-hybrid-rag/api-reference)
+- check the actual og py ref for improvment and update from tavily [here](https://docs.tavily.com/docs/python-sdk/tavily-search/api-reference)
+
 - [ ] Detailed todo list with subtasks.
 
-- [ ] Check the latest version of the Tavily API and update the SDK accordingly.
 - [ ] Add more examples and use cases to the README.
 - [ ] Write tests.
