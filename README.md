@@ -103,7 +103,7 @@ This is an unofficial SDK for the Tavily Search API. For the official documentat
 
 ## License
 
-MIT
+[MIT](./LICENSE)
 
 ## TODO (for august 2024)
 
