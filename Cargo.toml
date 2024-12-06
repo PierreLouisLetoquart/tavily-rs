@@ -8,9 +8,17 @@ license = "MIT"
 repository = "https://github.com/PierreLouisLetoquart/tavily-rs"
 keywords = ["Tavily", "search-engine", "web-browser", "llm-search", "rag"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.198", features = ["derive"] }
 
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+
+[[example]]
+name = "basic_search"
+path = "examples/basic_search.rs"
+
+[[example]]
+name = "advanced_search"
+path = "examples/advanced_search.rs"

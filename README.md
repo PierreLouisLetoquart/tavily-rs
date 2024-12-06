@@ -111,6 +111,23 @@ The Tavily Search API may return various HTTP status codes. For a complete list
 and their meanings, please refer to the
 [official documentation](https://docs.tavily.com/docs/tavily-api/rest_api#error-codes).
 
+## Local Testing and Examples
+
+The SDK includes example code in the `examples/` directory. To run the examples:
+
+1. Set your Tavily API key as an environment variable:
+
+```bash
+export TAVILY_API_KEY='your-api-key-here'
+```
+
+2. Run an example using cargo:
+
+```bash
+cargo run --example basic_search
+cargo run --example advanced_search
+```
+
 ## Disclaimer
 
 This is an unofficial SDK for the Tavily Search API. For the official
@@ -119,15 +136,3 @@ documentation and support, please visit [Tavily Search API](https://tavily.com).
 ## License
 
 [MIT](./LICENSE)
-
-## TODO (for august 2024)
-
-- check new beta RAG feature
-  [here](https://docs.tavily.com/docs/python-sdk/tavily-hybrid-rag/api-reference)
-- check the actual og py ref for improvment and update from tavily
-  [here](https://docs.tavily.com/docs/python-sdk/tavily-search/api-reference)
-
-- [ ] Detailed todo list with subtasks.
-
-- [ ] Add more examples and use cases to the README.
-- [ ] Write tests.
