@@ -6,7 +6,7 @@ use tavily::{Tavily, SearchRequest, Result};
 async fn main() -> Result<()> {
     let api_key = std::env::var("TAVILY_API_KEY").expect("TAVILY_API_KEY must be set");
 
-    let client = Tavily::builder("your-api-key")
+    let client = Tavily::builder(&api_key)
         .timeout(Duration::from_secs(60))
         .max_retries(5)
         .build()?;
