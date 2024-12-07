@@ -4,38 +4,50 @@
 //!
 //! Import the library and create a new instance of `Tavily` with your API key.
 //!
-//! ```rust
+//! ```rust,ignore
 //! use tavily::Tavily;
 //!
-//! let tavily = Tavily::builder("your api key").build()?;
+//! let tavily = Tavily::builder("tvly-your-api-key").build()?;
 //! ```
 //!
-//! The `Tavily` instance provides three main functions:
+//! or
+//!
+//! ```rust,ignore
+//! let api_key = std::env::var("TAVILY_API_KEY").expect("TAVILY_API_KEY must be set");
+//! let tavily = Tavily::builder(&api_key)
+//!     .timeout(Duration::from_secs(60))
+//!     .max_retries(5)
+//!     .build()?;
+//! ```
+//!
+//! The `Tavily` instance provides the following functions:
 //!
 //! - `search`: Quick search with a query string.
 //!
-//! ```rust
+//! ```rust,ignore
 //! let response = tavily.search("your search query").await?;
 //! ```
 //!
 //! - `answer`: Advanced search with query and answer.
 //!
-//! ```rust
+//! ```rust,ignore
 //! let response = tavily.answer("your search query").await?;
+//! ```
+//!
+//! - `extract`: Extract content from a URL.
+//!
+//! ```rust,ignore
+//! let response = tavily.extract(vec!["https://example.com", "..."]).await?;
 //! ```
 //!
 //! - `call`: Custom search with various options using `SearchRequest`.
 //!
-//! ```rust
+//! ```rust,ignore
 //! use tavily::SearchRequest;
 //!
-//! let request = SearchRequest::new("your api key", "your search query");
+//! let request = SearchRequest::new(&api_key, "your search query")
 //!     .search_depth("advanced")
-//!     .include_answer(true)
 //!     .include_images(true)
-//!     .include_raw_content(true)
-//!     .max_results(10)
-//!     .include_domains(vec!["example.com"])
 //!     .exclude_domains(vec!["example.org"]);
 //!
 //! let response = tavily.call(&request).await?;
