@@ -1,5 +1,7 @@
 use std::fmt;
 
+pub type  Result<T> = core::result::Result<T, TavilyError>;
+
 #[derive(Debug)]
 pub enum TavilyError {
     Api(String),

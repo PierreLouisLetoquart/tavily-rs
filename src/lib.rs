@@ -47,7 +47,9 @@
 mod client;
 mod request;
 mod response;
+mod error;
 
 pub use client::Tavily;
 pub use request::SearchRequest;
 pub use response::{SearchResponse, SearchResult};
+pub use error::{Result, TavilyError};

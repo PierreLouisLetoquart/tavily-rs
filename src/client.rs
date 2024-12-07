@@ -1,12 +1,11 @@
 use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
 
-use crate::error::TavilyError;
+use crate::error::{Result, TavilyError};
 use crate::request::SearchRequest;
 use crate::response::SearchResponse;
 
 const DEFAULT_TIMEOUT: u64 = 30;
-const DEFAULT_API_VERSION: &str = "v1";
 const BASE_URL: &str = "https://api.tavily.com";
 
 #[derive(Clone)]
@@ -14,7 +13,6 @@ pub struct TavilyConfig {
     api_key: String,
     timeout: Duration,
     base_url: String,
-    api_version: String,
     max_retries: u32,
 }
 
@@ -24,7 +22,6 @@ impl Default for TavilyConfig {
             api_key: String::new(),
             timeout: Duration::from_secs(DEFAULT_TIMEOUT),
             base_url: BASE_URL.to_string(),
-            api_version: DEFAULT_API_VERSION.to_string(),
             max_retries: 3,
         }
     }
@@ -51,17 +48,12 @@ impl TavilyBuilder {
         self
     }
 
-    pub fn api_version(mut self, version: &str) -> Self {
-        self.config.api_version = version.to_string();
-        self
-    }
-
     pub fn max_retries(mut self, retries: u32) -> Self {
         self.config.max_retries = retries;
         self
     }
 
-    pub fn build(self) -> Result<Tavily, TavilyError> {
+    pub fn build(self) -> Result<Tavily> {
         if self.config.api_key.is_empty() {
             return Err(TavilyError::Configuration("API key is required".into()));
         }
@@ -90,14 +82,14 @@ impl Tavily {
 
     fn endpoint(&self, path: &str) -> String {
         format!(
-            "{}/{}/{}",
-            self.config.base_url, self.config.api_version, path
+            "{}/{}",
+            self.config.base_url, path
         )
     }
 
-    async fn call_api(&self, request: &SearchRequest) -> Result<SearchResponse, TavilyError> {
+    async fn call_api(&self, request: &SearchRequest) -> Result<SearchResponse> {
         let url = self.endpoint("search");
-        
+
         let mut retries = 0;
         loop {
             let result = self
@@ -117,7 +109,7 @@ impl Tavily {
                     return Err(TavilyError::RateLimit("Rate limit exceeded".into()));
                 }
                 retries += 1;
-                tokio::time::sleep(Duration::from_secs(2u64.pow(retries))).await;
+                std::thread::sleep(std::time::Duration::from_secs(2u64.pow(retries)));
                 continue;
             }
 
@@ -128,14 +120,17 @@ impl Tavily {
         }
     }
 
-    pub async fn search(&self, query: &str) -> Result<SearchResponse, TavilyError> {
+    pub async fn call(&self, body: &SearchRequest) -> Result<SearchResponse> {
+        self.call_api(&body).await
+    }
+
+    pub async fn search(&self, query: &str) -> Result<SearchResponse> {
         let request = SearchRequest::new(&self.config.api_key, query);
         self.call_api(&request).await
     }
 
-    pub async fn answer(&self, query: &str) -> Result<SearchResponse, TavilyError> {
-        let mut request = SearchRequest::new(&self.config.api_key, query);
-        request.include_answer(true);
+    pub async fn answer(&self, query: &str) -> Result<SearchResponse> {
+        let request = SearchRequest::new(&self.config.api_key, query).include_answer(true);
         self.call_api(&request).await
     }
 }
