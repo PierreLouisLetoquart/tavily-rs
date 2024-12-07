@@ -25,17 +25,20 @@ tavily = "^2.0.0"
 ## Quick Start
 
 ```rust
-use tavily::{Tavily, SearchRequest};
+use tavily::{Tavily, SearchRequest, Result};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let tavily = Tavily::new("your_api_key");
+async fn main() -> Result<()> {
+    let tavily = Tavily::builder("tvly-your-api-key")
+        .timeout(Duration::from_secs(60))
+        .max_retries(5)
+        .build()?;
     
     // Simple search
     let results = tavily.search("Latest AI developments").await?;
-    
+
     // Advanced search with customization
-    let mut request = SearchRequest::new("your_api_key", "Breaking tech news");
+    let mut request = SearchRequest::new("tvly-your-api-key", "Breaking tech news");
     request
         .search_depth("advanced")
         .topic("news")

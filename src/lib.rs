@@ -4,7 +4,7 @@
 //!
 //! Import the library and create a new instance of `Tavily` with your API key.
 //!
-//! ```rust,ignore
+//! ```rust
 //! use tavily::Tavily;
 //!
 //! let tavily = Tavily::builder("your api key").build()?;
@@ -14,29 +14,29 @@
 //!
 //! - `search`: Quick search with a query string.
 //!
-//! ```rust,ignore
+//! ```rust
 //! let response = tavily.search("your search query").await?;
 //! ```
 //!
 //! - `answer`: Advanced search with query and answer.
 //!
-//! ```rust,ignore
+//! ```rust
 //! let response = tavily.answer("your search query").await?;
 //! ```
 //!
 //! - `call`: Custom search with various options using `SearchRequest`.
 //!
-//! ```rust,ignore
+//! ```rust
 //! use tavily::SearchRequest;
 //!
 //! let request = SearchRequest::new("your api key", "your search query");
-//!     .search_depth("advanced");
-//!     .include_answer(true);
-//!     .include_images(true);
-//!     .include_raw_content(true);
-//!     .max_results(10);
-//!     .include_domains(vec!["example.com".to_string()]);
-//!     .exclude_domains(vec!["example.org".to_string()]);
+//!     .search_depth("advanced")
+//!     .include_answer(true)
+//!     .include_images(true)
+//!     .include_raw_content(true)
+//!     .max_results(10)
+//!     .include_domains(vec!["example.com"])
+//!     .exclude_domains(vec!["example.org"]);
 //!
 //! let response = tavily.call(&request).await?;
 //! ```
@@ -45,11 +45,11 @@
 //!
 //! For examples, error codes and licensing, refer to the [repository](https://github.com/PierreLouisLetoquart/tavily-rs).
 mod client;
+mod error;
 mod request;
 mod response;
-mod error;
 
 pub use client::Tavily;
+pub use error::{Result, TavilyError};
 pub use request::SearchRequest;
 pub use response::{SearchResponse, SearchResult};
-pub use error::{Result, TavilyError};
