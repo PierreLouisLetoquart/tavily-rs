@@ -17,6 +17,34 @@ pub struct SearchRequest {
     include_image_descriptions: Option<bool>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct ExtractRequest {
+    api_key: String,
+    urls: Vec<String>,
+}
+
+impl Default for ExtractRequest {
+    fn default() -> Self {
+        Self {
+            api_key: "".into(),
+            urls: vec![],
+        }
+    }
+}
+
+impl ExtractRequest {
+    pub fn new<I, S>(api_key: &str, urls: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        Self {
+            api_key: api_key.into(),
+            urls: urls.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
 impl Default for SearchRequest {
     fn default() -> Self {
         Self {
@@ -38,7 +66,11 @@ impl Default for SearchRequest {
 
 impl SearchRequest {
     /// Create a new search request
-    pub fn new(api_key: &str, query: &str) -> Self {
+    pub fn new<S1, S2>(api_key: S1, query: S2) -> Self
+    where
+        S1: AsRef<str> + Into<String>,
+        S2: AsRef<str> + Into<String>,
+    {
         Self {
             api_key: api_key.into(),
             query: query.into(),
@@ -47,7 +79,10 @@ impl SearchRequest {
     }
 
     /// The depth of the search ("basic" or "advanced"). Default is basic for quick results and advanced for indepth high quality results but longer response time.
-    pub fn search_depth(mut self, search_depth: &str) -> Self {
+    pub fn search_depth<S>(mut self, search_depth: S) -> Self
+    where
+        S: AsRef<str> + Into<String>,
+    {
         self.search_depth = Some(search_depth.into());
         self
     }
@@ -77,19 +112,30 @@ impl SearchRequest {
     }
 
     /// A list of domains to specifically include in the search results. Default is None, which includes all domains.
-    pub fn include_domains(mut self, include_domains: Vec<String>) -> Self {
-        self.include_domains = Some(include_domains);
+    pub fn include_domains<I, S>(mut self, include_domains: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        self.include_domains = Some(include_domains.into_iter().map(Into::into).collect());
         self
     }
 
     /// A list of domains to specifically exclude from the search results. Default is None, which doesn't exclude any domains.
-    pub fn exclude_domains(mut self, exclude_domains: Vec<String>) -> Self {
-        self.exclude_domains = Some(exclude_domains);
+    pub fn exclude_domains<I, S>(mut self, exclude_domains: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        self.exclude_domains = Some(exclude_domains.into_iter().map(Into::into).collect());
         self
     }
 
     /// Set the category of the search ("general" or "news"). Default is "general".
-    pub fn topic(mut self, topic: &str) -> Self {
+    pub fn topic<S>(mut self, topic: S) -> Self
+    where
+        S: AsRef<str> + Into<String>,
+    {
         self.topic = Some(topic.into());
         self
     }

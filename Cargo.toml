@@ -22,3 +22,7 @@ path = "examples/basic_search.rs"
 [[example]]
 name = "advanced_search"
 path = "examples/advanced_search.rs"
+
+[[example]]
+name = "basic_extract"
+path = "examples/basic_extract.rs"

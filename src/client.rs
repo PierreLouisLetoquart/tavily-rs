@@ -2,10 +2,11 @@ use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
 
 use crate::error::{Result, TavilyError};
-use crate::request::SearchRequest;
-use crate::response::SearchResponse;
+use crate::request::{ExtractRequest, SearchRequest};
+use crate::response::{ExtractResult, SearchResponse};
 
 const DEFAULT_TIMEOUT: u64 = 30;
+const DEFAULT_MAX_RETRIES: u32 = 3;
 const BASE_URL: &str = "https://api.tavily.com";
 
 #[derive(Clone)]
@@ -22,7 +23,7 @@ impl Default for TavilyConfig {
             api_key: String::new(),
             timeout: Duration::from_secs(DEFAULT_TIMEOUT),
             base_url: BASE_URL.to_string(),
-            max_retries: 3,
+            max_retries: DEFAULT_MAX_RETRIES,
         }
     }
 }
@@ -76,31 +77,30 @@ pub struct Tavily {
 }
 
 impl Tavily {
-    pub fn builder(api_key: &str) -> TavilyBuilder {
-        TavilyBuilder::new(api_key)
+    pub fn builder<S>(api_key: S) -> TavilyBuilder
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        TavilyBuilder::new(&api_key.into())
     }
 
     fn endpoint(&self, path: &str) -> String {
-        format!(
-            "{}/{}",
-            self.config.base_url, path
-        )
+        format!("{}/{}", self.config.base_url, path)
     }
 
-    async fn call_api(&self, request: &SearchRequest) -> Result<SearchResponse> {
-        let url = self.endpoint("search");
+    async fn call_api<T, R>(&self, endpoint: &str, request: &T) -> Result<R>
+    where
+        T: serde::Serialize,
+        R: serde::de::DeserializeOwned,
+    {
+        let url = self.endpoint(endpoint);
 
         let mut retries = 0;
         loop {
-            let result = self
-                .client
-                .post(&url)
-                .json(request)
-                .send()
-                .await?;
+            let result = self.client.post(&url).json(request).send().await?;
 
             if result.status().is_success() {
-                return Ok(result.json::<SearchResponse>().await?);
+                return Ok(result.json::<R>().await?);
             }
 
             // Handle rate limiting
@@ -121,16 +121,31 @@ impl Tavily {
     }
 
     pub async fn call(&self, body: &SearchRequest) -> Result<SearchResponse> {
-        self.call_api(&body).await
+        self.call_api("search", body).await
     }
 
-    pub async fn search(&self, query: &str) -> Result<SearchResponse> {
-        let request = SearchRequest::new(&self.config.api_key, query);
-        self.call_api(&request).await
+    pub async fn search<S>(&self, query: S) -> Result<SearchResponse>
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        let request = SearchRequest::new(&self.config.api_key, &query.into());
+        self.call_api("search", &request).await
     }
 
-    pub async fn answer(&self, query: &str) -> Result<SearchResponse> {
-        let request = SearchRequest::new(&self.config.api_key, query).include_answer(true);
-        self.call_api(&request).await
+    pub async fn answer<S>(&self, query: S) -> Result<SearchResponse>
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        let request = SearchRequest::new(&self.config.api_key, &query.into()).include_answer(true);
+        self.call_api("search", &request).await
+    }
+
+    pub async fn extract<I, S>(&self, urls: I) -> Result<ExtractResult>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        let request = ExtractRequest::new(&self.config.api_key, urls);
+        self.call_api("extract", &request).await
     }
 }
