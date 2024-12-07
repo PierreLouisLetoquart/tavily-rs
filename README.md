@@ -1,137 +1,76 @@
 # Tavily Rust SDK
 
-The Tavily Rust SDK is a library for interacting with the Tavily Search API.
-With just a few lines of code, you can perform simple or advanced search
-queries, customize your search options, and get relevant search results powered
-by LLMs 🚀.
+Unofficial (for now 🫠) Rust SDK for the
+[Tavily Search API](https://tavily.com) - the AI-powered search engine for LLM
+applications 🚀
 
-> **Note:** Required an [api key](https://app.tavily.com/home)
+> [!NOTE]
+> Requires an API key. You can get one by signing up at
+> [Tavily](https://app.tavily.com/home). The API key should be kept secure and
+> not shared publicly.
 
-## Functions
+## Installation
 
-The Tavily Rust SDK provides three main functions:
-
-- `search`: Perform a simple search query with a single argument, `query`.
-
-```rust
-let response = tavily.search("your search query").await?;
+```bash
+cargo add tavily
 ```
 
-- `answer`: Perform an advanced search query that includes an answer to your
-  query. This function takes a bit more time than the simple search.
+or add it to your `Cargo.toml`:
 
-```rust
-let response = tavily.answer("your search query").await?;
-```
-
-- `call`: Perform a custom search query using the `SearchRequest` struct. This
-  struct provides a range of options for customizing your search:
-
-```rust
-let mut request = SearchRequest::new("your api key", "your search query");
-request.search_depth("advanced");          // "basic" or "advanced"
-request.topic("news");                     // "general" or "news"
-request.days(7);                           // Only for "news" topic
-request.include_answer(true);
-request.include_images(true);
-request.include_image_descriptions(true);
-request.include_raw_content(true);
-request.max_results(10);
-request.include_domains(vec!["example.com".to_string()]);
-request.exclude_domains(vec!["example.org".to_string()]);
-
-let response = tavily.call(&request).await?;
-```
-
-## Getting Started
-
-To get started with the Tavily Rust SDK, add the following to your `Cargo.toml`
-file:
-
-```rust
+```toml
 [dependencies]
-tavily = "^1.0.0"
+tavily = "^2.0.0"
 ```
 
-Then, import the library in your Rust code:
+## Quick Start
 
 ```rust
-use tavily::{Tavily, SearchRequest, SearchResponse};
-```
+use tavily::{Tavily, SearchRequest};
 
-Here's a simple example of how to use the library to perform a search query:
-
-```rust
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let api_key = "your_api_key";
-    let query = "your_search_query";
+    let tavily = Tavily::new("your_api_key");
+    
+    // Simple search
+    let results = tavily.search("Latest AI developments").await?;
+    
+    // Advanced search with customization
+    let mut request = SearchRequest::new("your_api_key", "Breaking tech news");
+    request
+        .search_depth("advanced")
+        .topic("news")
+        .include_answer(true)
+        .max_results(10);
+    
+    let results = tavily.call(&request).await?;
 
-    let tavily = Tavily::new(api_key);
-    let response = tavily.search(query).await?;
-
-    println!("{:#?}", response);
+    // Extract content from URLs
+    let urls = vec![
+        "https://tavily.com/",
+        "https://github.com/PierreLouisLetoquart",
+        "https://www.google.com/",
+    ];
+    let results = tavily.extract(urls).await?;
 
     Ok(())
 }
 ```
 
-You can also customize the search options by using the `SearchRequest` struct:
+## Features
 
-```rust
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let api_key = "your_api_key";
-    let query = "your_search_query";
+- **Simple Search**: Quick search queries with minimal configuration
+- **Answer Mode**: Get AI-generated answers along with search results
+- **Advanced Customization**: Control search depth, topics, time range, and more
+- **Domain Filtering**: Include or exclude specific domains
+- **Rich Content**: Optional image results and descriptions
 
-    let mut request = SearchRequest::new(api_key, query);
-    request.search_depth("advanced");
-    request.topic("news");
-    request.days(7);
-    request.include_answer(true);
-    request.include_images(true);
-    request.include_image_descriptions(true);
-    request.include_raw_content(true);
-    request.max_results(10);
-    request.include_domains(vec!["example.com".to_string()]);
-    request.exclude_domains(vec!["example.org".to_string()]);
+## Documentation
 
-    let tavily = Tavily::new(api_key);
-    let response = tavily.call(&request).await?;
+For detailed examples and API documentation, check out:
 
-    println!("{:#?}", response);
-
-    Ok(())
-}
-```
-
-## Error Codes
-
-The Tavily Search API may return various HTTP status codes. For a complete list
-and their meanings, please refer to the
-[official documentation](https://docs.tavily.com/docs/tavily-api/rest_api#error-codes).
-
-## Local Testing and Examples
-
-The SDK includes example code in the `examples/` directory. To run the examples:
-
-1. Set your Tavily API key as an environment variable:
-
-```bash
-export TAVILY_API_KEY='your-api-key-here'
-```
-
-2. Run an example using cargo:
-
-```bash
-cargo run --example basic_search
-cargo run --example advanced_search
-```
-
-## Disclaimer
-
-This is an unofficial SDK for the Tavily Search API. For the official
-documentation and support, please visit [Tavily Search API](https://tavily.com).
+- [Examples Directory](./examples)
+- [API Documentation](https://docs.tavily.com/docs/)
+- [Error Codes](https://docs.tavily.com/docs/rest-api/api-reference#error-codes)
 
 ## License
 
