@@ -1,6 +1,6 @@
 [package]
 name = "tavily"
-version = "1.0.1"
+version = "2.0.1"
 edition = "2021"
 authors = ["Pierre-Louis Létoquart <randlgint@proton.me>"]
 description = "A tiny tool for calling Tavily's REST API in the simplest way!"
@@ -22,3 +22,7 @@ path = "examples/basic_search.rs"
 [[example]]
 name = "advanced_search"
 path = "examples/advanced_search.rs"
+
+[[example]]
+name = "basic_extract"
+path = "examples/basic_extract.rs"

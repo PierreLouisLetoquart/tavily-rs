@@ -20,3 +20,24 @@ pub struct SearchResult {
     pub raw_content: Option<String>,
     pub score: f32,
 }
+
+#[derive(Debug, Deserialize)]
+/// The result from the API when an extract is made. [more info](https://docs.tavily.com/docs/rest-api/api-reference#request-1)
+pub struct ExtractResult {
+    pub results: Vec<ExtractResultItem>,
+    pub failed_results: Vec<FailedExtractResult>,
+    pub response_time: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ExtractResultItem {
+    pub url: String,
+    pub raw_content: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FailedExtractResult {
+    pub url: String,
+    pub error: String,
+}
+
