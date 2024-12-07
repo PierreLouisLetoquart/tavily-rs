@@ -7,7 +7,7 @@
 //! ```rust,ignore
 //! use tavily::Tavily;
 //!
-//! let tavily = Tavily::new("your api key");
+//! let tavily = Tavily::builder("your api key").build()?;
 //! ```
 //!
 //! The `Tavily` instance provides three main functions:
@@ -29,14 +29,14 @@
 //! ```rust,ignore
 //! use tavily::SearchRequest;
 //!
-//! let mut request = SearchRequest::new("your api key", "your search query");
-//! request.search_depth("advanced");
-//! request.include_answer(true);
-//! request.include_images(true);
-//! request.include_raw_content(true);
-//! request.max_results(10);
-//! request.include_domains(vec!["example.com".to_string()]);
-//! request.exclude_domains(vec!["example.org".to_string()]);
+//! let request = SearchRequest::new("your api key", "your search query");
+//!     .search_depth("advanced");
+//!     .include_answer(true);
+//!     .include_images(true);
+//!     .include_raw_content(true);
+//!     .max_results(10);
+//!     .include_domains(vec!["example.com".to_string()]);
+//!     .exclude_domains(vec!["example.org".to_string()]);
 //!
 //! let response = tavily.call(&request).await?;
 //! ```
