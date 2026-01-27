@@ -11,6 +11,7 @@ keywords = ["Tavily", "search-engine", "web-browser", "llm-search", "rag"]
 [dependencies]
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.198", features = ["derive"] }
+tokio = { version = "1.0", features = ["time"] }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }

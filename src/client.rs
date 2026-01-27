@@ -1,5 +1,7 @@
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
 use reqwest::{Client, ClientBuilder};
-use std::time::Duration;
+use tokio::time::sleep;
 
 use crate::error::{Result, TavilyError};
 use crate::request::{ExtractRequest, SearchRequest};
@@ -108,16 +110,35 @@ impl Tavily {
             // Handle rate limiting
             if result.status() == 429 {
                 if retries >= self.config.max_retries {
-                    return Err(TavilyError::RateLimit("Rate limit exceeded".into()));
+                    let status = result.status();
+                    let body = result
+                        .text()
+                        .await
+                        .unwrap_or_else(|err| format!("<failed to read body: {}>", err));
+                    return Err(TavilyError::RateLimit(format!(
+                        "Rate limit exceeded: {} - {}",
+                        status, body
+                    )));
                 }
                 retries += 1;
-                std::thread::sleep(std::time::Duration::from_secs(2u64.pow(retries)));
+                let jitter_ms = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map(|duration| duration.subsec_millis() % 250)
+                    .unwrap_or(0) as u64;
+                let backoff =
+                    Duration::from_secs(2u64.pow(retries)) + Duration::from_millis(jitter_ms);
+                sleep(backoff).await;
                 continue;
             }
 
+            let status = result.status();
+            let body = result
+                .text()
+                .await
+                .unwrap_or_else(|err| format!("<failed to read body: {}>", err));
             return Err(TavilyError::Api(format!(
-                "API request failed: {}",
-                result.status()
+                "API request failed: {} - {}",
+                status, body
             )));
         }
     }

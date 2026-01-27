@@ -5,15 +5,25 @@ use serde::Serialize;
 pub struct SearchRequest {
     api_key: String,
     query: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     search_depth: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     include_answer: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     include_images: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     include_raw_content: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     max_results: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     include_domains: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     exclude_domains: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     topic: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     days: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     include_image_descriptions: Option<bool>,
 }
 
@@ -50,16 +60,16 @@ impl Default for SearchRequest {
         Self {
             api_key: "".into(),
             query: "".into(),
-            search_depth: Some("basic".into()),
-            include_answer: Some(false),
-            include_images: Some(false),
-            include_raw_content: Some(false),
-            max_results: Some(5),
-            include_domains: Some(vec![]),
-            exclude_domains: Some(vec![]),
-            topic: Some("general".into()),
-            days: Some(3),
-            include_image_descriptions: Some(false),
+            search_depth: None,
+            include_answer: None,
+            include_images: None,
+            include_raw_content: None,
+            max_results: None,
+            include_domains: None,
+            exclude_domains: None,
+            topic: None,
+            days: None,
+            include_image_descriptions: None,
         }
     }
 }
