@@ -88,6 +88,22 @@ impl Tavily {
         TavilyBuilder::new(&api_key.into())
     }
 
+    pub fn with_reqwest_client<S>(api_key: S, client: Client) -> Result<Self>
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        let config = TavilyConfig {
+            api_key: api_key.into(),
+            ..TavilyConfig::default()
+        };
+
+        if config.api_key.is_empty() {
+            return Err(TavilyError::Configuration("API key is required".into()));
+        }
+
+        Ok(Self { config, client })
+    }
+
     fn endpoint(&self, path: &str) -> String {
         format!("{}/{}", self.config.base_url, path)
     }
