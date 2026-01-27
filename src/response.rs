@@ -40,4 +40,3 @@ pub struct FailedExtractResult {
     pub url: String,
     pub error: String,
 }
-

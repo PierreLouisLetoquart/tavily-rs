@@ -34,8 +34,10 @@ pub struct TavilyBuilder {
 
 impl TavilyBuilder {
     pub fn new(api_key: &str) -> Self {
-        let mut config = TavilyConfig::default();
-        config.api_key = api_key.to_string();
+        let config = TavilyConfig {
+            api_key: api_key.to_string(),
+            ..TavilyConfig::default()
+        };
         Self { config }
     }
 
@@ -128,7 +130,7 @@ impl Tavily {
     where
         S: AsRef<str> + Into<String>,
     {
-        let request = SearchRequest::new(&self.config.api_key, &query.into());
+        let request = SearchRequest::new(&self.config.api_key, query.into());
         self.call_api("search", &request).await
     }
 
@@ -136,7 +138,7 @@ impl Tavily {
     where
         S: AsRef<str> + Into<String>,
     {
-        let request = SearchRequest::new(&self.config.api_key, &query.into()).include_answer(true);
+        let request = SearchRequest::new(&self.config.api_key, query.into()).include_answer(true);
         self.call_api("search", &request).await
     }
 

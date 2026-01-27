@@ -1,6 +1,6 @@
 use std::fmt;
 
-pub type  Result<T> = core::result::Result<T, TavilyError>;
+pub type Result<T> = core::result::Result<T, TavilyError>;
 
 #[derive(Debug)]
 pub enum TavilyError {
@@ -27,4 +27,4 @@ impl From<reqwest::Error> for TavilyError {
     fn from(err: reqwest::Error) -> Self {
         TavilyError::Http(err)
     }
-} 
+}
