@@ -63,5 +63,7 @@ mod response;
 
 pub use client::Tavily;
 pub use error::{Result, TavilyError};
-pub use request::{SearchDepth, SearchRequest, SearchTopic};
-pub use response::{SearchResponse, SearchResult};
+pub use request::{ExtractRequest, SearchDepth, SearchRequest, SearchTopic};
+pub use response::{
+    ExtractResult, ExtractResultItem, FailedExtractResult, SearchResponse, SearchResult,
+};
