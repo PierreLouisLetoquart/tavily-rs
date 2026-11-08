@@ -1,12 +1,28 @@
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+/// The depth of the search ("basic" or "advanced")
+pub enum SearchDepth {
+    Basic,
+    Advanced,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+/// The category of the search ("general" or "news")
+pub enum SearchTopic {
+    General,
+    News,
+}
+
+#[derive(Debug, Serialize)]
 /// Request object for the search API [more info](https://docs.tavily.com/docs/tavily-api/rest_api#parameters)
 pub struct SearchRequest {
     api_key: String,
     query: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    search_depth: Option<String>,
+    search_depth: Option<SearchDepth>,
     #[serde(skip_serializing_if = "Option::is_none")]
     include_answer: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -20,7 +36,7 @@ pub struct SearchRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     exclude_domains: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    topic: Option<String>,
+    topic: Option<SearchTopic>,
     #[serde(skip_serializing_if = "Option::is_none")]
     days: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -89,11 +105,8 @@ impl SearchRequest {
     }
 
     /// The depth of the search ("basic" or "advanced"). Default is basic for quick results and advanced for indepth high quality results but longer response time.
-    pub fn search_depth<S>(mut self, search_depth: S) -> Self
-    where
-        S: AsRef<str> + Into<String>,
-    {
-        self.search_depth = Some(search_depth.into());
+    pub fn search_depth(mut self, search_depth: SearchDepth) -> Self {
+        self.search_depth = Some(search_depth);
         self
     }
 
@@ -142,11 +155,8 @@ impl SearchRequest {
     }
 
     /// Set the category of the search ("general" or "news"). Default is "general".
-    pub fn topic<S>(mut self, topic: S) -> Self
-    where
-        S: AsRef<str> + Into<String>,
-    {
-        self.topic = Some(topic.into());
+    pub fn topic(mut self, topic: SearchTopic) -> Self {
+        self.topic = Some(topic);
         self
     }
 

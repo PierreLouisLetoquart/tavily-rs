@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use tavily::{Result, SearchRequest, Tavily};
+use tavily::{Result, SearchDepth, SearchRequest, SearchTopic, Tavily};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -12,8 +12,8 @@ async fn main() -> Result<()> {
         .build()?;
 
     let request = SearchRequest::new(&api_key, "Latest Rust programming news")
-        .search_depth("advanced")
-        .topic("news")
+        .search_depth(SearchDepth::Advanced)
+        .topic(SearchTopic::News)
         .days(7)
         .include_answer(true);
 

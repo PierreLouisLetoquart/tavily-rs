@@ -43,10 +43,10 @@
 //! - `call`: Custom search with various options using `SearchRequest`.
 //!
 //! ```rust,ignore
-//! use tavily::SearchRequest;
+//! use tavily::{SearchDepth, SearchRequest};
 //!
 //! let request = SearchRequest::new(&api_key, "your search query")
-//!     .search_depth("advanced")
+//!     .search_depth(SearchDepth::Advanced)
 //!     .include_images(true)
 //!     .exclude_domains(vec!["example.org"]);
 //!
@@ -63,5 +63,5 @@ mod response;
 
 pub use client::Tavily;
 pub use error::{Result, TavilyError};
-pub use request::SearchRequest;
+pub use request::{SearchDepth, SearchRequest, SearchTopic};
 pub use response::{SearchResponse, SearchResult};
