@@ -45,7 +45,7 @@
 //! ```rust,ignore
 //! use tavily::{SearchDepth, SearchRequest};
 //!
-//! let request = SearchRequest::new(&api_key, "your search query")
+//! let request = SearchRequest::new("your search query")
 //!     .search_depth(SearchDepth::Advanced)
 //!     .include_images(true)
 //!     .exclude_domains(vec!["example.org"]);

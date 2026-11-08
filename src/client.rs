@@ -117,7 +117,13 @@ impl Tavily {
 
         let mut retries = 0;
         loop {
-            let result = self.client.post(&url).json(request).send().await?;
+            let result = self
+                .client
+                .post(&url)
+                .bearer_auth(&self.config.api_key)
+                .json(request)
+                .send()
+                .await?;
 
             if result.status().is_success() {
                 return Ok(result.json::<R>().await?);
@@ -167,7 +173,7 @@ impl Tavily {
     where
         S: AsRef<str> + Into<String>,
     {
-        let request = SearchRequest::new(&self.config.api_key, query.into());
+        let request = SearchRequest::new(query.into());
         self.call_api("search", &request).await
     }
 
@@ -175,7 +181,7 @@ impl Tavily {
     where
         S: AsRef<str> + Into<String>,
     {
-        let request = SearchRequest::new(&self.config.api_key, query.into()).include_answer(true);
+        let request = SearchRequest::new(query.into()).include_answer(true);
         self.call_api("search", &request).await
     }
 
@@ -184,7 +190,7 @@ impl Tavily {
         I: IntoIterator<Item = S>,
         S: AsRef<str> + Into<String>,
     {
-        let request = ExtractRequest::new(&self.config.api_key, urls);
+        let request = ExtractRequest::new(urls);
         self.call_api("extract", &request).await
     }
 }

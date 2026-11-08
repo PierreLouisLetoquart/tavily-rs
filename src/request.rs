@@ -19,7 +19,6 @@ pub enum SearchTopic {
 #[derive(Debug, Serialize)]
 /// Request object for the search API [more info](https://docs.tavily.com/docs/tavily-api/rest_api#parameters)
 pub struct SearchRequest {
-    api_key: String,
     query: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     search_depth: Option<SearchDepth>,
@@ -45,27 +44,22 @@ pub struct SearchRequest {
 
 #[derive(Debug, Serialize)]
 pub struct ExtractRequest {
-    api_key: String,
     urls: Vec<String>,
 }
 
 impl Default for ExtractRequest {
     fn default() -> Self {
-        Self {
-            api_key: "".into(),
-            urls: vec![],
-        }
+        Self { urls: vec![] }
     }
 }
 
 impl ExtractRequest {
-    pub fn new<I, S>(api_key: &str, urls: I) -> Self
+    pub fn new<I, S>(urls: I) -> Self
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
         Self {
-            api_key: api_key.into(),
             urls: urls.into_iter().map(Into::into).collect(),
         }
     }
@@ -74,7 +68,6 @@ impl ExtractRequest {
 impl Default for SearchRequest {
     fn default() -> Self {
         Self {
-            api_key: "".into(),
             query: "".into(),
             search_depth: None,
             include_answer: None,
@@ -92,13 +85,11 @@ impl Default for SearchRequest {
 
 impl SearchRequest {
     /// Create a new search request
-    pub fn new<S1, S2>(api_key: S1, query: S2) -> Self
+    pub fn new<S>(query: S) -> Self
     where
-        S1: AsRef<str> + Into<String>,
-        S2: AsRef<str> + Into<String>,
+        S: AsRef<str> + Into<String>,
     {
         Self {
-            api_key: api_key.into(),
             query: query.into(),
             ..Default::default()
         }

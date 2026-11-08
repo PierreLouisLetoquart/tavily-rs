@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
         .max_retries(5)
         .build()?;
 
-    let request = SearchRequest::new(&api_key, "Latest Rust programming news")
+    let request = SearchRequest::new("Latest Rust programming news")
         .search_depth(SearchDepth::Advanced)
         .topic(SearchTopic::News)
         .days(7)
