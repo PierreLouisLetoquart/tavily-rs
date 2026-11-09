@@ -64,8 +64,8 @@ mod response;
 pub use client::Tavily;
 pub use error::{Result, TavilyError};
 pub use request::{
-    ExtractDepth, ExtractFormat, ExtractRequest, SearchDepth, SearchIncludeDomainsMode,
-    SearchRequest, SearchTimeRange, SearchTopic,
+    ExtractDepth, ExtractFormat, ExtractRequest, IncludeAnswer, IncludeRawContent, SearchDepth,
+    SearchIncludeDomainsMode, SearchRequest, SearchTimeRange, SearchTopic,
 };
 pub use response::{
     ExtractResult, ExtractResultItem, FailedExtractResult, SearchImageResult, SearchResponse,

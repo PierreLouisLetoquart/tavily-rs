@@ -1,4 +1,52 @@
-use serde::Serialize;
+use serde::{Serialize, Serializer};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Whether to include an LLM-generated answer (`true`/`false`, "basic" or "advanced")
+pub enum IncludeAnswer {
+    Bool(bool),
+    Basic,
+    Advanced,
+}
+
+impl From<bool> for IncludeAnswer {
+    fn from(value: bool) -> Self {
+        IncludeAnswer::Bool(value)
+    }
+}
+
+impl Serialize for IncludeAnswer {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            IncludeAnswer::Bool(value) => serializer.serialize_bool(*value),
+            IncludeAnswer::Basic => serializer.serialize_str("basic"),
+            IncludeAnswer::Advanced => serializer.serialize_str("advanced"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Whether to include the raw content of each result (`true`/`false`, "markdown" or "text")
+pub enum IncludeRawContent {
+    Bool(bool),
+    Markdown,
+    Text,
+}
+
+impl From<bool> for IncludeRawContent {
+    fn from(value: bool) -> Self {
+        IncludeRawContent::Bool(value)
+    }
+}
+
+impl Serialize for IncludeRawContent {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            IncludeRawContent::Bool(value) => serializer.serialize_bool(*value),
+            IncludeRawContent::Markdown => serializer.serialize_str("markdown"),
+            IncludeRawContent::Text => serializer.serialize_str("text"),
+        }
+    }
+}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -44,11 +92,11 @@ pub struct SearchRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     search_depth: Option<SearchDepth>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    include_answer: Option<bool>,
+    include_answer: Option<IncludeAnswer>,
     #[serde(skip_serializing_if = "Option::is_none")]
     include_images: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    include_raw_content: Option<bool>,
+    include_raw_content: Option<IncludeRawContent>,
     #[serde(skip_serializing_if = "Option::is_none")]
     max_results: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -213,9 +261,12 @@ impl SearchRequest {
         self
     }
 
-    /// Include answers in the search results. Default is False.
-    pub fn include_answer(mut self, include_answer: bool) -> Self {
-        self.include_answer = Some(include_answer);
+    /// Include an LLM-generated answer to the query. `true` or `IncludeAnswer::Basic` returns a quick answer, `IncludeAnswer::Advanced` a more detailed one. Default is False.
+    pub fn include_answer<A>(mut self, include_answer: A) -> Self
+    where
+        A: Into<IncludeAnswer>,
+    {
+        self.include_answer = Some(include_answer.into());
         self
     }
 
@@ -225,9 +276,12 @@ impl SearchRequest {
         self
     }
 
-    /// Include raw content in the search results. Default is False.
-    pub fn include_raw_content(mut self, include_raw_content: bool) -> Self {
-        self.include_raw_content = Some(include_raw_content);
+    /// Include the cleaned and parsed HTML content of each result. `true` or `IncludeRawContent::Markdown` returns markdown, `IncludeRawContent::Text` plain text (may increase latency). Default is False.
+    pub fn include_raw_content<R>(mut self, include_raw_content: R) -> Self
+    where
+        R: Into<IncludeRawContent>,
+    {
+        self.include_raw_content = Some(include_raw_content.into());
         self
     }
 
