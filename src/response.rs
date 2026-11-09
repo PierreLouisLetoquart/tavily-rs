@@ -71,3 +71,90 @@ pub struct FailedExtractResult {
 pub struct Usage {
     pub credits: f64,
 }
+
+impl SearchResponse {
+    /// Format the results as a numbered list of sources, ready to paste into an LLM prompt.
+    ///
+    /// Each source is rendered as `[n] title`, `Source: url` and its content (the raw content
+    /// when it was requested, the snippet otherwise). The output never exceeds `max_chars`
+    /// characters: once the budget is reached, the last source is cut with `…` and the
+    /// remaining ones are dropped.
+    ///
+    /// ```no_run
+    /// # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+    /// let response = tavily.search("Who won the 2026 World Cup?").await?;
+    /// let prompt = format!(
+    ///     "Answer using only these sources and cite them as [n].\n\n{}",
+    ///     response.to_context(8_000)
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn to_context(&self, max_chars: usize) -> String {
+        build_context(
+            self.results.iter().map(|result| {
+                (
+                    result.title.as_str(),
+                    result.url.as_str(),
+                    result.raw_content.as_deref().unwrap_or(&result.content),
+                )
+            }),
+            max_chars,
+        )
+    }
+}
+
+impl ExtractResult {
+    /// Format the extracted pages as a numbered list of sources, ready to paste into an LLM
+    /// prompt. Same format and `max_chars` budget as [`SearchResponse::to_context`]; pages
+    /// without a title use their URL as title. Failed URLs are not included.
+    pub fn to_context(&self, max_chars: usize) -> String {
+        build_context(
+            self.results.iter().map(|result| {
+                (
+                    result.title.as_deref().unwrap_or(&result.url),
+                    result.url.as_str(),
+                    result.raw_content.as_str(),
+                )
+            }),
+            max_chars,
+        )
+    }
+}
+
+/// Smallest number of content characters worth keeping when the last source has to be cut.
+const MIN_TRUNCATED_CONTENT: usize = 20;
+
+fn build_context<'a, I>(sources: I, max_chars: usize) -> String
+where
+    I: Iterator<Item = (&'a str, &'a str, &'a str)>,
+{
+    let mut context = String::new();
+    let mut used = 0;
+
+    for (index, (title, url, content)) in sources.enumerate() {
+        let separator = if context.is_empty() { "" } else { "\n\n" };
+        let header = format!("{separator}[{}] {}\nSource: {}\n", index + 1, title.trim(), url);
+        let content = content.trim();
+
+        let header_len = header.chars().count();
+        let content_len = content.chars().count();
+        if used + header_len + content_len <= max_chars {
+            context.push_str(&header);
+            context.push_str(content);
+            used += header_len + content_len;
+            continue;
+        }
+
+        // Keep a cut version of this source only if a meaningful part of its content fits.
+        let remaining = max_chars.saturating_sub(used + header_len);
+        if remaining > MIN_TRUNCATED_CONTENT {
+            context.push_str(&header);
+            context.extend(content.chars().take(remaining - 1));
+            context.push('…');
+        }
+        break;
+    }
+
+    context
+}

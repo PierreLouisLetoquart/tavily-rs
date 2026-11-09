@@ -192,3 +192,71 @@ fn encodes_extract_request_options() {
         })
     );
 }
+
+fn search_response_with(contents: &[&str]) -> SearchResponse {
+    let results: Vec<_> = contents
+        .iter()
+        .enumerate()
+        .map(|(i, content)| {
+            json!({
+                "title": format!("Title {}", i + 1),
+                "url": format!("https://example.com/{}", i + 1),
+                "content": content,
+                "score": 0.5
+            })
+        })
+        .collect();
+    serde_json::from_value(json!({
+        "query": "q", "answer": null, "images": [], "results": results, "response_time": 0.1
+    }))
+    .unwrap()
+}
+
+#[test]
+fn to_context_formats_numbered_sources() {
+    let response = search_response_with(&["First content.", "Second content."]);
+
+    assert_eq!(
+        response.to_context(10_000),
+        "[1] Title 1\nSource: https://example.com/1\nFirst content.\n\n\
+         [2] Title 2\nSource: https://example.com/2\nSecond content."
+    );
+}
+
+#[test]
+fn to_context_respects_max_chars() {
+    let long = "é".repeat(500);
+    let response = search_response_with(&["Short.", &long, "Never included."]);
+
+    let context = response.to_context(200);
+
+    assert!(context.chars().count() <= 200);
+    assert!(context.contains("[2] Title 2"));
+    assert!(context.ends_with('…'));
+    assert!(!context.contains("[3]"));
+}
+
+#[test]
+fn to_context_drops_source_when_too_little_fits() {
+    let response = search_response_with(&["Short.", "Second content that would not fit."]);
+
+    let first_only = response.to_context(60);
+
+    assert!(first_only.starts_with("[1] Title 1"));
+    assert!(!first_only.contains("[2]"));
+    assert_eq!(response.to_context(0), "");
+}
+
+#[test]
+fn extract_to_context_uses_url_when_title_is_missing() {
+    let response: ExtractResult = serde_json::from_value(json!({
+        "results": [{ "url": "https://example.com", "raw_content": "Page content." }],
+        "response_time": 0.1
+    }))
+    .unwrap();
+
+    assert_eq!(
+        response.to_context(1_000),
+        "[1] https://example.com\nSource: https://example.com\nPage content."
+    );
+}
