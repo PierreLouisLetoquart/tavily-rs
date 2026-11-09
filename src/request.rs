@@ -48,7 +48,7 @@ impl Serialize for IncludeRawContent {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 /// The depth of the search ("ultra-fast", "fast", "basic" or "advanced")
 pub enum SearchDepth {
@@ -58,7 +58,7 @@ pub enum SearchDepth {
     Advanced,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 /// The category of the search ("general", "news" or "finance")
 pub enum SearchTopic {
@@ -67,7 +67,7 @@ pub enum SearchTopic {
     Finance,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 /// The time range back from the current date to filter results based on publish date or last updated date
 pub enum SearchTimeRange {
@@ -77,7 +77,7 @@ pub enum SearchTimeRange {
     Year,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 /// Controls how include_domains is applied
 pub enum SearchIncludeDomainsMode {
@@ -85,7 +85,7 @@ pub enum SearchIncludeDomainsMode {
     Prefer,
 }
 
-#[derive(Default, Debug, Serialize)]
+#[derive(Default, Debug, Clone, Serialize)]
 /// Request object for the search API [more info](https://docs.tavily.com/documentation/api-reference/endpoint/search)
 pub struct SearchRequest {
     query: String,
@@ -141,7 +141,7 @@ pub struct SearchRequest {
     safe_search: Option<bool>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 /// The depth of the extract.
 pub enum ExtractDepth {
@@ -149,7 +149,7 @@ pub enum ExtractDepth {
     Advanced,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 /// The format of the extracted web page content.
 pub enum ExtractFormat {
@@ -157,7 +157,7 @@ pub enum ExtractFormat {
     Text,
 }
 
-#[derive(Default, Debug, Serialize)]
+#[derive(Default, Debug, Clone, Serialize)]
 /// Request object for the extract API [more info](https://docs.tavily.com/documentation/api-reference/endpoint/extract)
 pub struct ExtractRequest {
     urls: Vec<String>,
@@ -180,6 +180,7 @@ pub struct ExtractRequest {
 }
 
 impl ExtractRequest {
+    /// Create a new extract request for 1 to 20 URLs
     pub fn new<I, S>(urls: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -200,7 +201,7 @@ impl ExtractRequest {
         self
     }
 
-    /// Chunks are short content snippets (about 800 characters each) pulled directly from the source. Use chunks_per_source to define the maximum number of relevant chunks returned per source and to control the raw_content length. Available only when query is provided. Default is 3.
+    /// Chunks are short content snippets (about 800 characters each) pulled directly from the source. Use chunks_per_source to define the maximum number of relevant chunks returned per source and to control the raw_content length. Available only when query is provided. Must be between 1 and 5. Default is 3.
     pub fn chunks_per_source(mut self, chunks_per_source: i32) -> Self {
         self.chunks_per_source = Some(chunks_per_source);
         self
@@ -255,7 +256,7 @@ impl SearchRequest {
         }
     }
 
-    /// The depth of the search ("ultra-fast", "fast", "basic" or "advanced"). Default is basic for quick results and advanced for indepth high quality results but longer response time.
+    /// The depth of the search ("ultra-fast", "fast", "basic" or "advanced"). Default is basic. advanced costs 2 API credits, the others 1.
     pub fn search_depth(mut self, search_depth: SearchDepth) -> Self {
         self.search_depth = Some(search_depth);
         self
@@ -285,13 +286,13 @@ impl SearchRequest {
         self
     }
 
-    /// The number of maximum search results to return. Default is 5.
+    /// The maximum number of search results to return, between 0 and 20. Default is 10.
     pub fn max_results(mut self, max_results: i32) -> Self {
         self.max_results = Some(max_results);
         self
     }
 
-    /// A list of domains to specifically include in the search results. Default is None, which includes all domains.
+    /// A list of domains to specifically include in the search results (maximum 300). Default is None, which includes all domains.
     pub fn include_domains<I, S>(mut self, include_domains: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -301,7 +302,7 @@ impl SearchRequest {
         self
     }
 
-    /// A list of domains to specifically exclude from the search results. Default is None, which doesn't exclude any domains.
+    /// A list of domains to specifically exclude from the search results (maximum 150). Default is None, which doesn't exclude any domains.
     pub fn exclude_domains<I, S>(mut self, exclude_domains: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -311,7 +312,7 @@ impl SearchRequest {
         self
     }
 
-    /// Set the category of the search ("general" or "news"). Default is "general".
+    /// Set the category of the search ("general", "news" or "finance"). Default is "general".
     pub fn topic(mut self, topic: SearchTopic) -> Self {
         self.topic = Some(topic);
         self
@@ -323,7 +324,7 @@ impl SearchRequest {
         self
     }
 
-    /// Chunks are short content snippets (about 500 characters each for basic and fast, 800 for advanced) pulled directly from the source. Use chunks_per_source to define the maximum number of relevant chunks returned per source and to control the content length. Available when search_depth is advanced, basic or fast. Default is 3.
+    /// Chunks are short content snippets (about 500 characters each for basic and fast, 800 for advanced) pulled directly from the source. Use chunks_per_source to define the maximum number of relevant chunks returned per source and to control the content length. Available when search_depth is advanced, basic or fast. Must be between 1 and 3. Default is 3.
     pub fn chunks_per_source(mut self, chunks_per_source: i32) -> Self {
         self.chunks_per_source = Some(chunks_per_source);
         self
@@ -365,7 +366,7 @@ impl SearchRequest {
         self
     }
 
-    /// The maximum age in hours of Tavily's cached copy of each result.
+    /// The maximum age in hours of Tavily's cached copy of each result. 1 to 720 only returns a cached copy fetched within that many hours, 0 always fetches the page live, -1 never fetches live. Unset (default) serves cached copies and fetches live as needed.
     pub fn max_age_hours(mut self, max_age_hours: i32) -> Self {
         self.max_age_hours = Some(max_age_hours);
         self
@@ -377,13 +378,13 @@ impl SearchRequest {
         self
     }
 
-    /// Controls how include_domains is applied. restrict limits results to only the listed domains. prefer also searches the rest of the web, so results outside include_domains can still surface, rather than excluding them. Default is restrict.
+    /// Controls how include_domains is applied. restrict limits results to only the listed domains. prefer also searches the rest of the web, so results outside include_domains can still surface, rather than excluding them. Setting it without include_domains returns a 400 error. Default is restrict.
     pub fn include_domains_mode(mut self, include_domains_mode: SearchIncludeDomainsMode) -> Self {
         self.include_domains_mode = Some(include_domains_mode);
         self
     }
 
-    /// Boost search results from a specific country. This will prioritize content from the selected country in the search results. Available only if topic is general.
+    /// Boost search results from a specific country. This will prioritize content from the selected country in the search results. Expects a lowercase English country name (e.g. "france", "united states"). Available only if topic is general.
     pub fn country<S>(mut self, country: S) -> Self
     where
         S: AsRef<str> + Into<String>,
@@ -401,13 +402,13 @@ impl SearchRequest {
         self
     }
 
-    /// Strictly filter out search results that don't match the language parameter, instead of only boosting them in ranking. Default is False.
+    /// Strictly filter out search results that don't match the language parameter, instead of only boosting them in ranking. Requires language to be set; returns a 400 error otherwise. Default is False.
     pub fn filter_by_language(mut self, filter_by_language: bool) -> Self {
         self.filter_by_language = Some(filter_by_language);
         self
     }
 
-    /// When auto_parameters is enabled, Tavily automatically configures search parameters based on your query's content and intent. You can still set other parameters manually, and your explicit values will override the automatic ones. Default is False.
+    /// When auto_parameters is enabled, Tavily automatically configures search parameters based on your query's content and intent. You can still set other parameters manually, and your explicit values will override the automatic ones. search_depth may be set to advanced (2 API credits); set it explicitly to basic to avoid that. Default is False.
     pub fn auto_parameters(mut self, auto_parameters: bool) -> Self {
         self.auto_parameters = Some(auto_parameters);
         self
