@@ -1,6 +1,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use reqwest::{Client, ClientBuilder};
+use reqwest::header::{HeaderMap, RETRY_AFTER};
+use reqwest::{Client, ClientBuilder, StatusCode};
 use tokio::time::sleep;
 
 use crate::error::{Result, TavilyError};
@@ -11,6 +12,27 @@ const DEFAULT_TIMEOUT: u64 = 30;
 const DEFAULT_MAX_RETRIES: u32 = 3;
 const BASE_URL: &str = "https://api.tavily.com";
 const API_KEY_ENV: &str = "TAVILY_API_KEY";
+const RETRYABLE_SERVER_ERRORS: [StatusCode; 4] = [
+    StatusCode::INTERNAL_SERVER_ERROR,
+    StatusCode::BAD_GATEWAY,
+    StatusCode::SERVICE_UNAVAILABLE,
+    StatusCode::GATEWAY_TIMEOUT,
+];
+
+/// Exponential backoff (2, 4, 8… seconds) with up to 250ms of jitter.
+fn backoff(retry: u32) -> Duration {
+    let jitter_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.subsec_millis() % 250)
+        .unwrap_or(0) as u64;
+    Duration::from_secs(2u64.saturating_pow(retry)) + Duration::from_millis(jitter_ms)
+}
+
+/// The delay requested by the server in the `Retry-After` header, in seconds.
+fn retry_after(headers: &HeaderMap) -> Option<Duration> {
+    let seconds = headers.get(RETRY_AFTER)?.to_str().ok()?.trim().parse::<u64>().ok()?;
+    Some(Duration::from_secs(seconds))
+}
 
 #[derive(Clone)]
 pub struct TavilyConfig {
@@ -147,47 +169,50 @@ impl Tavily {
 
         let mut retries = 0;
         loop {
-            let result = self
+            let sent = self
                 .client
                 .post(&url)
                 .bearer_auth(&self.config.api_key)
                 .json(request)
                 .send()
-                .await?;
+                .await;
 
-            if result.status().is_success() {
-                return Ok(result.json::<R>().await?);
+            // Connection failures never reached Tavily, so they are safe to retry. Timeouts are
+            // not retried: the request may have been processed and its credits charged.
+            let response = match sent {
+                Ok(response) => response,
+                Err(err) if err.is_connect() && retries < self.config.max_retries => {
+                    retries += 1;
+                    sleep(backoff(retries)).await;
+                    continue;
+                }
+                Err(err) => return Err(err.into()),
+            };
+
+            let status = response.status();
+            if status.is_success() {
+                return Ok(response.json::<R>().await?);
             }
 
-            // Handle rate limiting
-            if result.status() == 429 {
-                if retries >= self.config.max_retries {
-                    let status = result.status();
-                    let body = result
-                        .text()
-                        .await
-                        .unwrap_or_else(|err| format!("<failed to read body: {}>", err));
-                    return Err(TavilyError::RateLimit(format!(
-                        "Rate limit exceeded: {} - {}",
-                        status, body
-                    )));
-                }
+            let retryable = status == StatusCode::TOO_MANY_REQUESTS
+                || RETRYABLE_SERVER_ERRORS.contains(&status);
+            if retryable && retries < self.config.max_retries {
                 retries += 1;
-                let jitter_ms = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .map(|duration| duration.subsec_millis() % 250)
-                    .unwrap_or(0) as u64;
-                let backoff =
-                    Duration::from_secs(2u64.pow(retries)) + Duration::from_millis(jitter_ms);
-                sleep(backoff).await;
+                let delay = retry_after(response.headers()).unwrap_or_else(|| backoff(retries));
+                sleep(delay).await;
                 continue;
             }
 
-            let status = result.status();
-            let body = result
+            let body = response
                 .text()
                 .await
                 .unwrap_or_else(|err| format!("<failed to read body: {}>", err));
+            if status == StatusCode::TOO_MANY_REQUESTS {
+                return Err(TavilyError::RateLimit(format!(
+                    "Rate limit exceeded: {} - {}",
+                    status, body
+                )));
+            }
             return Err(TavilyError::Api(format!(
                 "API request failed: {} - {}",
                 status, body
@@ -227,5 +252,28 @@ impl Tavily {
     {
         let request = ExtractRequest::new(urls);
         self.call_api("extract", &request).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn retry_after_reads_seconds() {
+        let mut headers = HeaderMap::new();
+        assert_eq!(retry_after(&headers), None);
+
+        headers.insert(RETRY_AFTER, "60".parse().unwrap());
+        assert_eq!(retry_after(&headers), Some(Duration::from_secs(60)));
+
+        headers.insert(RETRY_AFTER, "Wed, 21 Oct 2026 07:28:00 GMT".parse().unwrap());
+        assert_eq!(retry_after(&headers), None);
+    }
+
+    #[test]
+    fn backoff_grows_exponentially() {
+        assert!(backoff(1) >= Duration::from_secs(2) && backoff(1) < Duration::from_secs(3));
+        assert!(backoff(3) >= Duration::from_secs(8) && backoff(3) < Duration::from_secs(9));
     }
 }
