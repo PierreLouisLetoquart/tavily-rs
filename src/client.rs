@@ -169,6 +169,11 @@ impl Tavily {
         self.call_api("search", body).await
     }
 
+    /// Extract content from URLs with custom options using an `ExtractRequest`.
+    pub async fn call_extract(&self, body: &ExtractRequest) -> Result<ExtractResult> {
+        self.call_api("extract", body).await
+    }
+
     pub async fn search<S>(&self, query: S) -> Result<SearchResponse>
     where
         S: AsRef<str> + Into<String>,
