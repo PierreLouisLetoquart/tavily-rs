@@ -1,6 +1,7 @@
 use serde::{Serialize, Serializer};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 /// Whether to include an LLM-generated answer (`true`/`false`, "basic" or "advanced")
 pub enum IncludeAnswer {
     Bool(bool),
@@ -25,6 +26,7 @@ impl Serialize for IncludeAnswer {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 /// Whether to include the raw content of each result (`true`/`false`, "markdown" or "text")
 pub enum IncludeRawContent {
     Bool(bool),
@@ -49,6 +51,7 @@ impl Serialize for IncludeRawContent {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 #[serde(rename_all = "kebab-case")]
 /// The depth of the search ("ultra-fast", "fast", "basic" or "advanced")
 pub enum SearchDepth {
@@ -59,6 +62,7 @@ pub enum SearchDepth {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 /// The category of the search ("general", "news" or "finance")
 pub enum SearchTopic {
@@ -68,6 +72,7 @@ pub enum SearchTopic {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 /// The time range back from the current date to filter results based on publish date or last updated date
 pub enum SearchTimeRange {
@@ -78,6 +83,7 @@ pub enum SearchTimeRange {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 /// Controls how include_domains is applied
 pub enum SearchIncludeDomainsMode {
@@ -142,6 +148,7 @@ pub struct SearchRequest {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 /// The depth of the extract.
 pub enum ExtractDepth {
@@ -150,6 +157,7 @@ pub enum ExtractDepth {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 /// The format of the extracted web page content.
 pub enum ExtractFormat {

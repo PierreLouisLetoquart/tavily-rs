@@ -1,6 +1,7 @@
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 /// The response from the API when a search is made. [more info](https://docs.tavily.com/documentation/api-reference/endpoint/search)
 pub struct SearchResponse {
     pub answer: Option<String>,
@@ -16,6 +17,7 @@ pub struct SearchResponse {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 /// The result type contained in the response. [more info](https://docs.tavily.com/documentation/api-reference/endpoint/search)
 pub struct SearchResult {
     pub title: String,
@@ -31,9 +33,11 @@ pub struct SearchResult {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 #[serde(untagged)]
 pub enum SearchImageResult {
     Url(String),
+    #[non_exhaustive]
     ImageResult {
         url: String,
         description: Option<String>,
@@ -41,6 +45,7 @@ pub enum SearchImageResult {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 /// The result from the API when an extract is made. [more info](https://docs.tavily.com/documentation/api-reference/endpoint/extract)
 pub struct ExtractResult {
     pub results: Vec<ExtractResultItem>,
@@ -52,6 +57,7 @@ pub struct ExtractResult {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 pub struct ExtractResultItem {
     pub url: String,
     pub title: Option<String>,
@@ -62,12 +68,14 @@ pub struct ExtractResultItem {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 pub struct FailedExtractResult {
     pub url: String,
     pub error: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
 pub struct Usage {
     pub credits: f64,
 }
