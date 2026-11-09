@@ -4,9 +4,7 @@ use tavily::{Result, SearchDepth, SearchRequest, SearchTimeRange, SearchTopic, T
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let api_key = std::env::var("TAVILY_API_KEY").expect("TAVILY_API_KEY must be set");
-
-    let client = Tavily::builder(&api_key)
+    let client = Tavily::builder_from_env()?
         .timeout(Duration::from_secs(60))
         .max_retries(5)
         .build()?;

@@ -19,7 +19,7 @@ or add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tavily = "^3.0.0"
+tavily = "^3.1.0"
 ```
 
 ## Quick Start
@@ -34,7 +34,8 @@ use tavily::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let tavily = Tavily::builder("tvly-your-api-key")
+    // Reads TAVILY_API_KEY (or use `Tavily::builder("tvly-your-api-key")`)
+    let tavily = Tavily::builder_from_env()?
         .timeout(Duration::from_secs(60))
         .max_retries(5)
         .build()?;
@@ -66,8 +67,36 @@ async fn main() -> Result<()> {
 
     let results = tavily.call_extract(&request).await?;
 
+    // Extract any number of URLs (batched by 20, the API limit)
+    let urls: Vec<String> = (1..=50).map(|n| format!("https://example.com/{n}")).collect();
+    let results = tavily.extract_many(urls).await?;
+
     Ok(())
 }
+```
+
+### LLM-ready context
+
+`to_context` turns search or extract results into numbered sources, capped at a
+character budget, ready to drop into a prompt:
+
+```rust
+let question = "What changed in the latest Rust release?";
+let response = tavily.search(question).await?;
+
+let prompt = format!(
+    "Answer using only the sources below, citing them as [n].\n\n{}\n\nQuestion: {question}",
+    response.to_context(8_000)
+);
+```
+
+```text
+[1] <title of the first result>
+Source: <url of the first result>
+<content of the first result>
+
+[2] <title of the second result>
+...
 ```
 
 > [!NOTE]
@@ -77,7 +106,10 @@ async fn main() -> Result<()> {
 
 ## Features
 
-- **Simple Search**: Quick search queries with minimal configuration
+- **Simple Search**: Quick search queries with minimal configuration, API key from `TAVILY_API_KEY`
+- **LLM-ready Context**: `to_context` formats results as numbered, budgeted sources for prompts
+- **Batch Extract**: `extract_many` handles any number of URLs, in concurrent batches of 20
+- **Resilient**: Retries rate limits and server errors, honoring `Retry-After`
 - **Answer Mode**: Get AI-generated answers along with search results
 - **Advanced Customization**: Control search depth, topic, time range, country, language and more with typed options
 - **Domain Filtering**: Include, prefer or exclude specific domains

@@ -2,9 +2,7 @@ use tavily::{ExtractDepth, ExtractFormat, ExtractRequest, Result, Tavily};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let api_key = std::env::var("TAVILY_API_KEY").expect("TAVILY_API_KEY must be set");
-
-    let tavily = Tavily::builder(&api_key).build()?;
+    let tavily = Tavily::from_env()?;
 
     let request = ExtractRequest::new(["https://www.rust-lang.org/learn"])
         .query("async programming")

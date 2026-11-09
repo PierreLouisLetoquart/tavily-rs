@@ -35,5 +35,9 @@ name = "advanced_extract"
 path = "examples/advanced_extract.rs"
 
 [[example]]
+name = "llm_context"
+path = "examples/llm_context.rs"
+
+[[example]]
 name = "custom_client"
 path = "examples/custom_client.rs"

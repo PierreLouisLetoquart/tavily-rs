@@ -12,19 +12,24 @@
 //! # Ok::<(), tavily::TavilyError>(())
 //! ```
 //!
-//! or, with a custom timeout and retry policy:
+//! or read the key from the `TAVILY_API_KEY` environment variable, optionally with a custom
+//! timeout and retry policy:
 //!
 //! ```no_run
 //! use std::time::Duration;
 //! use tavily::Tavily;
 //!
-//! let api_key = std::env::var("TAVILY_API_KEY").expect("TAVILY_API_KEY must be set");
-//! let tavily = Tavily::builder(&api_key)
+//! let tavily = Tavily::from_env()?;
+//!
+//! let tavily = Tavily::builder_from_env()?
 //!     .timeout(Duration::from_secs(60))
 //!     .max_retries(5)
 //!     .build()?;
 //! # Ok::<(), tavily::TavilyError>(())
 //! ```
+//!
+//! Rate limits (429) and server errors (500, 502, 503, 504) are retried with exponential
+//! backoff, following the `Retry-After` header when Tavily sends one.
 //!
 //! The [`Tavily`] instance provides the following functions:
 //!
@@ -84,6 +89,27 @@
 //!     .extract_depth(ExtractDepth::Advanced);
 //!
 //! let response = tavily.call_extract(&request).await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! - [`extract_many`](Tavily::extract_many) / [`call_extract_many`](Tavily::call_extract_many):
+//!   Extract any number of URLs, split into concurrent batches of 20 (the API limit).
+//!
+//! ## LLM-ready context
+//!
+//! [`SearchResponse::to_context`] and [`ExtractResult::to_context`] format the results as
+//! numbered sources within a character budget, ready to drop into a prompt:
+//!
+//! ```no_run
+//! # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+//! let question = "What changed in the latest Rust release?";
+//! let response = tavily.search(question).await?;
+//!
+//! let prompt = format!(
+//!     "Answer using only the sources below, citing them as [n].\n\n{}\n\nQuestion: {question}",
+//!     response.to_context(8_000)
+//! );
 //! # Ok(())
 //! # }
 //! ```
