@@ -312,7 +312,7 @@ impl SearchRequest {
         self
     }
 
-    /// Set the category of the search ("general", "news" or "finance"). Default is "general".
+    /// Set the category of the search ("general", "news" or "finance"). "finance" is not supported for fast or ultra-fast search depths (the API returns a 400 error). Default is "general".
     pub fn topic(mut self, topic: SearchTopic) -> Self {
         self.topic = Some(topic);
         self
@@ -384,7 +384,7 @@ impl SearchRequest {
         self
     }
 
-    /// Boost search results from a specific country. This will prioritize content from the selected country in the search results. Expects a lowercase English country name (e.g. "france", "united states"). Available only if topic is general.
+    /// Boost search results from a specific country. This will prioritize content from the selected country in the search results. Expects a lowercase English country name (e.g. "france", "united states"). Available only if topic is general, and not supported for fast or ultra-fast search depths (the API returns a 400 error).
     pub fn country<S>(mut self, country: S) -> Self
     where
         S: AsRef<str> + Into<String>,
