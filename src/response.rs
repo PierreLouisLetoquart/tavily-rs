@@ -11,7 +11,7 @@ pub struct SearchResponse {
     pub results: Vec<SearchResult>,
     // TODO: auto_parameters
     pub usage: Option<Usage>,
-    pub request_id: String,
+    pub request_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,7 +26,7 @@ pub struct SearchResult {
     pub favicon: Option<String>,
     #[serde(default)]
     pub images: Vec<SearchImageResult>,
-    pub id: String,
+    pub id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,17 +43,19 @@ pub enum SearchImageResult {
 /// The result from the API when an extract is made. [more info](https://docs.tavily.com/documentation/api-reference/endpoint/extract)
 pub struct ExtractResult {
     pub results: Vec<ExtractResultItem>,
+    #[serde(default)]
     pub failed_results: Vec<FailedExtractResult>,
     pub response_time: f64,
     pub usage: Option<Usage>,
-    pub request_id: String,
+    pub request_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ExtractResultItem {
     pub url: String,
     pub raw_content: String,
-    pub images: Option<String>,
+    #[serde(default)]
+    pub images: Vec<String>,
     pub favicon: Option<String>,
 }
 
@@ -65,5 +67,5 @@ pub struct FailedExtractResult {
 
 #[derive(Debug, Deserialize)]
 pub struct Usage {
-    pub credits: i32,
+    pub credits: f64,
 }
