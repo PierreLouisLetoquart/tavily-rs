@@ -19,7 +19,7 @@ or add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tavily = "^3.1.0"
+tavily = "^4.0.0"
 ```
 
 ## Quick Start
@@ -99,10 +99,49 @@ Source: <url of the first result>
 ...
 ```
 
-> [!NOTE]
-> The API key is sent in the `Authorization: Bearer` header. Requests no longer
-> take an API key: since 3.0.0, `SearchRequest::new` and `ExtractRequest::new`
-> only take the query or the URLs.
+### Error handling
+
+API errors are typed by cause and carry Tavily's message:
+
+```rust
+use tavily::TavilyError;
+
+match tavily.search("rust").await {
+    Ok(response) => println!("{} results", response.results.len()),
+    Err(TavilyError::Unauthorized(_)) => eprintln!("check your API key"),
+    Err(TavilyError::RateLimited { retry_after, .. }) => eprintln!("retry in {retry_after:?}"),
+    Err(TavilyError::UsageLimit(err)) => eprintln!("out of credits: {}", err.message),
+    Err(err) => eprintln!("{err}"),
+}
+```
+
+Rate limits (429) and server errors (500, 502, 503, 504) are retried first,
+following Tavily's `Retry-After` header when present.
+
+## TLS
+
+HTTPS uses [rustls](https://github.com/rustls/rustls) by default, so no OpenSSL
+is needed. To use the platform's native TLS library instead:
+
+```toml
+[dependencies]
+tavily = { version = "^4.0.0", default-features = false, features = ["native-tls"] }
+```
+
+## Upgrading to 4.0
+
+- **Errors**: `TavilyError::RateLimit(String)` and `TavilyError::Api(String)`
+  are replaced by `Unauthorized`, `BadRequest`, `RateLimited { error, retry_after }`,
+  `UsageLimit` and `Api`, each holding an `ApiError` (`status`, `message`, `body`).
+  `err.status()` gives the HTTP status of any API error.
+- **reqwest 0.13**: `Tavily::with_reqwest_client` takes a `reqwest` 0.13 `Client`,
+  and rustls replaces native TLS as the default backend (see [TLS](#tls)).
+- **`#[non_exhaustive]`**: public enums and response structs can gain variants and
+  fields in minor releases. `match` statements need a `_` arm, and response
+  structs can only be created by deserializing them.
+
+Since 3.0.0, the API key is sent in the `Authorization: Bearer` header, and
+`SearchRequest::new` and `ExtractRequest::new` only take the query or the URLs.
 
 ## Features
 
@@ -110,6 +149,8 @@ Source: <url of the first result>
 - **LLM-ready Context**: `to_context` formats results as numbered, budgeted sources for prompts
 - **Batch Extract**: `extract_many` handles any number of URLs, in concurrent batches of 20
 - **Resilient**: Retries rate limits and server errors, honoring `Retry-After`
+- **Typed Errors**: Unauthorized, bad request, rate limit and usage limit errors with Tavily's message
+- **No OpenSSL**: rustls by default, native TLS as an option
 - **Answer Mode**: Get AI-generated answers along with search results
 - **Advanced Customization**: Control search depth, topic, time range, country, language and more with typed options
 - **Domain Filtering**: Include, prefer or exclude specific domains

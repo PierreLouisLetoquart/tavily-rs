@@ -29,7 +29,8 @@
 //! ```
 //!
 //! Rate limits (429) and server errors (500, 502, 503, 504) are retried with exponential
-//! backoff, following the `Retry-After` header when Tavily sends one.
+//! backoff, following the `Retry-After` header when Tavily sends one. Errors that remain are
+//! typed by cause, see [`TavilyError`].
 //!
 //! The [`Tavily`] instance provides the following functions:
 //!
@@ -113,6 +114,13 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! ## Cargo features
+//!
+//! - `rustls` (default): HTTPS through [rustls](https://github.com/rustls/rustls), no OpenSSL
+//!   needed.
+//! - `native-tls`: HTTPS through the platform's native TLS library. Use it with
+//!   `default-features = false`.
 //!
 //! ## Learn more
 //!
