@@ -9,7 +9,8 @@ pub struct SearchResponse {
     #[serde(default)]
     pub images: Vec<SearchImageResult>,
     pub results: Vec<SearchResult>,
-    // TODO: auto_parameters
+    /// The parameters selected by Tavily, only present when `auto_parameters` is enabled.
+    pub auto_parameters: Option<serde_json::Map<String, serde_json::Value>>,
     pub usage: Option<Usage>,
     pub request_id: Option<String>,
 }
