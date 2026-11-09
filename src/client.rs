@@ -10,6 +10,7 @@ use crate::response::{ExtractResult, SearchResponse};
 const DEFAULT_TIMEOUT: u64 = 30;
 const DEFAULT_MAX_RETRIES: u32 = 3;
 const BASE_URL: &str = "https://api.tavily.com";
+const API_KEY_ENV: &str = "TAVILY_API_KEY";
 
 #[derive(Clone)]
 pub struct TavilyConfig {
@@ -86,6 +87,35 @@ impl Tavily {
         S: AsRef<str> + Into<String>,
     {
         TavilyBuilder::new(&api_key.into())
+    }
+
+    /// Create a client with default settings, using the API key from the `TAVILY_API_KEY`
+    /// environment variable.
+    ///
+    /// ```no_run
+    /// let tavily = tavily::Tavily::from_env()?;
+    /// # Ok::<(), tavily::TavilyError>(())
+    /// ```
+    pub fn from_env() -> Result<Self> {
+        Self::builder_from_env()?.build()
+    }
+
+    /// Create a builder using the API key from the `TAVILY_API_KEY` environment variable, to
+    /// customize the timeout, retries or base URL.
+    ///
+    /// ```no_run
+    /// use std::time::Duration;
+    ///
+    /// let tavily = tavily::Tavily::builder_from_env()?
+    ///     .timeout(Duration::from_secs(60))
+    ///     .build()?;
+    /// # Ok::<(), tavily::TavilyError>(())
+    /// ```
+    pub fn builder_from_env() -> Result<TavilyBuilder> {
+        let api_key = std::env::var(API_KEY_ENV).map_err(|_| {
+            TavilyError::Configuration(format!("{API_KEY_ENV} environment variable is not set"))
+        })?;
+        Ok(TavilyBuilder::new(&api_key))
     }
 
     pub fn with_reqwest_client<S>(api_key: S, client: Client) -> Result<Self>
