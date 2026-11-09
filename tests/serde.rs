@@ -39,7 +39,10 @@ fn decodes_full_search_response() {
     assert!(response.answer.is_some());
     assert!(matches!(
         &response.images[0],
-        SearchImageResult::ImageResult { description: Some(_), .. }
+        SearchImageResult::ImageResult {
+            description: Some(_),
+            ..
+        }
     ));
     let result = &response.results[0];
     assert_eq!(result.id.as_deref(), Some("a3f9c2-04"));
@@ -98,8 +101,14 @@ fn decodes_partial_success_extract_response() {
     let response: ExtractResult = serde_json::from_value(body).unwrap();
 
     assert!(response.results[0].images.is_empty());
-    assert_eq!(response.results[0].title.as_deref(), Some("Example article"));
-    assert_eq!(response.failed_results[0].url, "https://example.com/unavailable");
+    assert_eq!(
+        response.results[0].title.as_deref(),
+        Some("Example article")
+    );
+    assert_eq!(
+        response.failed_results[0].url,
+        "https://example.com/unavailable"
+    );
 }
 
 #[test]
@@ -128,7 +137,10 @@ fn decodes_extract_response_with_images_and_usage() {
 fn encodes_default_search_request_with_query_only() {
     let request = SearchRequest::new("rust");
 
-    assert_eq!(serde_json::to_value(&request).unwrap(), json!({ "query": "rust" }));
+    assert_eq!(
+        serde_json::to_value(&request).unwrap(),
+        json!({ "query": "rust" })
+    );
 }
 
 #[test]

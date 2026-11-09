@@ -18,7 +18,11 @@ fn from_env_reads_tavily_api_key() {
 
     std::env::set_var("TAVILY_API_KEY", "tvly-test");
     assert!(Tavily::from_env().is_ok());
-    assert!(Tavily::builder_from_env().unwrap().max_retries(1).build().is_ok());
+    assert!(Tavily::builder_from_env()
+        .unwrap()
+        .max_retries(1)
+        .build()
+        .is_ok());
 
     std::env::remove_var("TAVILY_API_KEY");
 }

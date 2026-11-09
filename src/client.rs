@@ -34,7 +34,13 @@ fn backoff(retry: u32) -> Duration {
 
 /// The delay requested by the server in the `Retry-After` header, in seconds.
 fn retry_after(headers: &HeaderMap) -> Option<Duration> {
-    let seconds = headers.get(RETRY_AFTER)?.to_str().ok()?.trim().parse::<u64>().ok()?;
+    let seconds = headers
+        .get(RETRY_AFTER)?
+        .to_str()
+        .ok()?
+        .trim()
+        .parse::<u64>()
+        .ok()?;
     Some(Duration::from_secs(seconds))
 }
 
@@ -316,7 +322,10 @@ mod tests {
         headers.insert(RETRY_AFTER, "60".parse().unwrap());
         assert_eq!(retry_after(&headers), Some(Duration::from_secs(60)));
 
-        headers.insert(RETRY_AFTER, "Wed, 21 Oct 2026 07:28:00 GMT".parse().unwrap());
+        headers.insert(
+            RETRY_AFTER,
+            "Wed, 21 Oct 2026 07:28:00 GMT".parse().unwrap(),
+        );
         assert_eq!(retry_after(&headers), None);
     }
 

@@ -98,7 +98,9 @@ async fn extract_many_splits_urls_into_batches_of_20() {
         "failed_results":[{"url":"https://bad.example","error":"failed"}],
         "response_time":0.1,"usage":{"credits":1},"request_id":"abc"}"#;
     let (base_url, hits) = serve(vec![response("200 OK", "", body)]).await;
-    let urls: Vec<String> = (0..45).map(|n| format!("https://example.com/{n}")).collect();
+    let urls: Vec<String> = (0..45)
+        .map(|n| format!("https://example.com/{n}"))
+        .collect();
 
     let result = client(&base_url, 0).extract_many(urls).await.unwrap();
 
@@ -131,7 +133,9 @@ async fn extract_many_returns_batch_errors() {
         r#"{"detail":{"error":"Unauthorized: missing or invalid API key."}}"#,
     )])
     .await;
-    let urls: Vec<String> = (0..25).map(|n| format!("https://example.com/{n}")).collect();
+    let urls: Vec<String> = (0..25)
+        .map(|n| format!("https://example.com/{n}"))
+        .collect();
 
     let result = client(&base_url, 0).extract_many(urls).await;
 

@@ -153,7 +153,12 @@ where
 
     for (index, (title, url, content)) in sources.enumerate() {
         let separator = if context.is_empty() { "" } else { "\n\n" };
-        let header = format!("{separator}[{}] {}\nSource: {}\n", index + 1, title.trim(), url);
+        let header = format!(
+            "{separator}[{}] {}\nSource: {}\n",
+            index + 1,
+            title.trim(),
+            url
+        );
         let content = content.trim();
 
         let header_len = header.chars().count();
