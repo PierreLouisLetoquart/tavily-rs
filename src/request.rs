@@ -646,3 +646,133 @@ impl CrawlRequest {
         self
     }
 }
+
+#[derive(Default, Debug, Clone, Serialize)]
+/// Request object for the map API [more info](https://docs.tavily.com/documentation/api-reference/endpoint/map)
+pub struct MapRequest {
+    url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    instructions: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_depth: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_breadth: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    limit: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    select_paths: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    select_domains: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    exclude_paths: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    exclude_domains: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    allow_external: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    timeout: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    include_usage: Option<bool>,
+}
+
+impl MapRequest {
+    /// Create a new map request starting from the root URL
+    pub fn new<S>(url: S) -> Self
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        Self {
+            url: url.into(),
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn server_timeout(&self) -> Duration {
+        crawl_server_timeout(self.timeout)
+    }
+
+    /// Natural language instructions for the crawler (e.g. "Find all pages about the Python SDK"). When specified, the cost increases to 2 API credits per 10 successful pages instead of 1.
+    pub fn instructions<S>(mut self, instructions: S) -> Self
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        self.instructions = Some(instructions.into());
+        self
+    }
+
+    /// Max depth of the mapping: how far from the base URL the crawler can explore. Must be between 1 and 5. Default is 1.
+    pub fn max_depth(mut self, max_depth: i32) -> Self {
+        self.max_depth = Some(max_depth);
+        self
+    }
+
+    /// Max number of links to follow per level of the tree (i.e. per page). Must be between 1 and 500. Default is 20.
+    pub fn max_breadth(mut self, max_breadth: i32) -> Self {
+        self.max_breadth = Some(max_breadth);
+        self
+    }
+
+    /// Total number of links the crawler will process before stopping. Default is 50.
+    pub fn limit(mut self, limit: i32) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Regex patterns to select only URLs with specific path patterns (e.g. `/docs/.*`, `/api/v1.*`).
+    pub fn select_paths<I, S>(mut self, select_paths: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        self.select_paths = collect_strings(select_paths);
+        self
+    }
+
+    /// Regex patterns to restrict mapping to specific domains or subdomains (e.g. `^docs\.example\.com$`).
+    pub fn select_domains<I, S>(mut self, select_domains: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        self.select_domains = collect_strings(select_domains);
+        self
+    }
+
+    /// Regex patterns to exclude URLs with specific path patterns (e.g. `/private/.*`, `/admin/.*`).
+    pub fn exclude_paths<I, S>(mut self, exclude_paths: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        self.exclude_paths = collect_strings(exclude_paths);
+        self
+    }
+
+    /// Regex patterns to exclude specific domains or subdomains from mapping (e.g. `^private\.example\.com$`).
+    pub fn exclude_domains<I, S>(mut self, exclude_domains: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        self.exclude_domains = collect_strings(exclude_domains);
+        self
+    }
+
+    /// Whether to include external domain links in the final results list. Default is true.
+    pub fn allow_external(mut self, allow_external: bool) -> Self {
+        self.allow_external = Some(allow_external);
+        self
+    }
+
+    /// Maximum time in seconds to wait for the mapping before timing out. Must be between 10 and 150 seconds. Default is 150.
+    pub fn timeout(mut self, timeout: f32) -> Self {
+        self.timeout = Some(timeout);
+        self
+    }
+
+    /// Whether to include credit usage information in the response. The value may be 0 until 10 pages have been mapped. Default is false.
+    pub fn include_usage(mut self, include_usage: bool) -> Self {
+        self.include_usage = Some(include_usage);
+        self
+    }
+}

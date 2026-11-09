@@ -134,9 +134,9 @@ pub use client::Tavily;
 pub use error::{ApiError, Result, TavilyError};
 pub use request::{
     CrawlRequest, ExtractDepth, ExtractFormat, ExtractRequest, IncludeAnswer, IncludeRawContent,
-    SearchDepth, SearchIncludeDomainsMode, SearchRequest, SearchTimeRange, SearchTopic,
+    MapRequest, SearchDepth, SearchIncludeDomainsMode, SearchRequest, SearchTimeRange, SearchTopic,
 };
 pub use response::{
-    CrawlResponse, CrawlResult, ExtractResult, ExtractResultItem, FailedExtractResult,
+    CrawlResponse, CrawlResult, ExtractResult, ExtractResultItem, FailedExtractResult, MapResponse,
     SearchImageResult, SearchResponse, SearchResult, Usage,
 };

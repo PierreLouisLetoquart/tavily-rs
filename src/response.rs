@@ -230,3 +230,14 @@ impl CrawlResponse {
         )
     }
 }
+
+#[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
+/// The response from the API when a map is made: the URLs discovered on the site. [more info](https://docs.tavily.com/documentation/api-reference/endpoint/map)
+pub struct MapResponse {
+    pub base_url: String,
+    pub results: Vec<String>,
+    pub response_time: f64,
+    pub usage: Option<Usage>,
+    pub request_id: Option<String>,
+}

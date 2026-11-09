@@ -7,8 +7,8 @@ use reqwest::{Client, ClientBuilder, StatusCode};
 use tokio::time::sleep;
 
 use crate::error::{Result, TavilyError};
-use crate::request::{CrawlRequest, ExtractRequest, SearchRequest};
-use crate::response::{CrawlResponse, ExtractResult, SearchResponse};
+use crate::request::{CrawlRequest, ExtractRequest, MapRequest, SearchRequest};
+use crate::response::{CrawlResponse, ExtractResult, MapResponse, SearchResponse};
 
 const DEFAULT_TIMEOUT: u64 = 30;
 const DEFAULT_MAX_RETRIES: u32 = 3;
@@ -300,6 +300,47 @@ impl Tavily {
     /// ```
     pub async fn call_crawl(&self, body: &CrawlRequest) -> Result<CrawlResponse> {
         self.call_api("crawl", body, Some(body.server_timeout()))
+            .await
+    }
+
+    /// List the URLs of a website from its root URL, without extracting their content. See
+    /// [`Tavily::call_map`] to set the depth, limits, path filters or instructions.
+    ///
+    /// ```no_run
+    /// # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+    /// let response = tavily.map("https://docs.tavily.com").await?;
+    /// println!("{} pages found", response.results.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn map<S>(&self, url: S) -> Result<MapResponse>
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        self.call_map(&MapRequest::new(url)).await
+    }
+
+    /// Map a website with custom options using a [`MapRequest`]. Maps can run up to 150 seconds
+    /// on Tavily's side; the request waits for them even past the client timeout.
+    ///
+    /// Map pairs well with [`Tavily::extract_many`]: list a site's pages, filter them, then
+    /// extract only the ones you need.
+    ///
+    /// ```no_run
+    /// # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+    /// use tavily::MapRequest;
+    ///
+    /// let request = MapRequest::new("https://docs.tavily.com")
+    ///     .select_paths(["/documentation/.*"])
+    ///     .max_depth(2);
+    /// let urls = tavily.call_map(&request).await?.results;
+    ///
+    /// let pages = tavily.extract_many(urls).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn call_map(&self, body: &MapRequest) -> Result<MapResponse> {
+        self.call_api("map", body, Some(body.server_timeout()))
             .await
     }
 

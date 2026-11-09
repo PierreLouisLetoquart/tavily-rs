@@ -1,8 +1,8 @@
 use serde_json::json;
 use tavily::{
     CrawlRequest, CrawlResponse, ExtractDepth, ExtractFormat, ExtractRequest, ExtractResult,
-    IncludeAnswer, IncludeRawContent, SearchDepth, SearchImageResult, SearchIncludeDomainsMode,
-    SearchRequest, SearchResponse, SearchTimeRange, SearchTopic,
+    IncludeAnswer, IncludeRawContent, MapRequest, MapResponse, SearchDepth, SearchImageResult,
+    SearchIncludeDomainsMode, SearchRequest, SearchResponse, SearchTimeRange, SearchTopic,
 };
 
 // Example responses taken from https://docs.tavily.com/documentation/api-reference/endpoint/search
@@ -339,5 +339,51 @@ fn encodes_crawl_request_options() {
     assert_eq!(
         serde_json::to_value(CrawlRequest::new("https://example.com")).unwrap(),
         json!({ "url": "https://example.com" })
+    );
+}
+
+// Example from https://docs.tavily.com/documentation/api-reference/endpoint/map
+#[test]
+fn decodes_map_response() {
+    let body = json!({
+        "base_url": "docs.tavily.com",
+        "results": [
+            "https://docs.tavily.com/welcome",
+            "https://docs.tavily.com/documentation/api-credits",
+            "https://docs.tavily.com/documentation/about"
+        ],
+        "response_time": 1.23,
+        "usage": { "credits": 1 },
+        "request_id": "123e4567-e89b-12d3-a456-426614174111"
+    });
+
+    let response: MapResponse = serde_json::from_value(body).unwrap();
+
+    assert_eq!(response.base_url, "docs.tavily.com");
+    assert_eq!(response.results.len(), 3);
+    assert_eq!(response.usage.unwrap().credits, 1.0);
+}
+
+#[test]
+fn encodes_map_request_options() {
+    let request = MapRequest::new("https://docs.tavily.com")
+        .instructions("Find all pages about the Python SDK")
+        .max_depth(3)
+        .limit(100)
+        .select_domains([r"^docs\.tavily\.com$"])
+        .exclude_paths(["/private/.*"])
+        .include_usage(true);
+
+    assert_eq!(
+        serde_json::to_value(&request).unwrap(),
+        json!({
+            "url": "https://docs.tavily.com",
+            "instructions": "Find all pages about the Python SDK",
+            "max_depth": 3,
+            "limit": 100,
+            "select_domains": [r"^docs\.tavily\.com$"],
+            "exclude_paths": ["/private/.*"],
+            "include_usage": true
+        })
     );
 }
