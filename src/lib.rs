@@ -123,7 +123,7 @@ mod request;
 mod response;
 
 pub use client::Tavily;
-pub use error::{Result, TavilyError};
+pub use error::{ApiError, Result, TavilyError};
 pub use request::{
     ExtractDepth, ExtractFormat, ExtractRequest, IncludeAnswer, IncludeRawContent, SearchDepth,
     SearchIncludeDomainsMode, SearchRequest, SearchTimeRange, SearchTopic,

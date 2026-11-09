@@ -73,7 +73,14 @@ async fn returns_rate_limit_error_when_retries_are_exhausted() {
 
     let result = client(&base_url, 2).search("q").await;
 
-    assert!(matches!(result, Err(TavilyError::RateLimit(ref msg)) if msg.contains("slow down")));
+    match result {
+        Err(TavilyError::RateLimited { error, retry_after }) => {
+            assert_eq!(error.status, 429);
+            assert_eq!(error.message, "slow down");
+            assert_eq!(retry_after, Some(std::time::Duration::ZERO));
+        }
+        other => panic!("expected RateLimited, got {other:?}"),
+    }
     assert_eq!(hits.load(Ordering::SeqCst), 3);
 }
 
@@ -88,7 +95,9 @@ async fn does_not_retry_client_errors() {
 
     let result = client(&base_url, 3).search("q").await;
 
-    assert!(matches!(result, Err(TavilyError::Api(ref msg)) if msg.contains("Invalid topic")));
+    assert!(
+        matches!(result, Err(TavilyError::BadRequest(ref error)) if error.message == "Invalid topic")
+    );
     assert_eq!(hits.load(Ordering::SeqCst), 1);
 }
 
@@ -139,5 +148,5 @@ async fn extract_many_returns_batch_errors() {
 
     let result = client(&base_url, 0).extract_many(urls).await;
 
-    assert!(matches!(result, Err(TavilyError::Api(ref msg)) if msg.contains("401")));
+    assert!(matches!(result, Err(TavilyError::Unauthorized(_))));
 }

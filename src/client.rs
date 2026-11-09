@@ -213,20 +213,16 @@ impl Tavily {
                 continue;
             }
 
+            let retry_after = retry_after(response.headers());
             let body = response
                 .text()
                 .await
                 .unwrap_or_else(|err| format!("<failed to read body: {}>", err));
-            if status == StatusCode::TOO_MANY_REQUESTS {
-                return Err(TavilyError::RateLimit(format!(
-                    "Rate limit exceeded: {} - {}",
-                    status, body
-                )));
-            }
-            return Err(TavilyError::Api(format!(
-                "API request failed: {} - {}",
-                status, body
-            )));
+            return Err(TavilyError::from_response(
+                status.as_u16(),
+                body,
+                retry_after,
+            ));
         }
     }
 
