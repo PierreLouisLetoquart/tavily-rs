@@ -30,5 +30,9 @@ name = "basic_extract"
 path = "examples/basic_extract.rs"
 
 [[example]]
+name = "advanced_extract"
+path = "examples/advanced_extract.rs"
+
+[[example]]
 name = "custom_client"
 path = "examples/custom_client.rs"

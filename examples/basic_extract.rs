@@ -8,7 +8,7 @@ async fn main() -> Result<()> {
     let response = tavily
         .extract(vec![
             "https://crates.io/crates/tavily",
-            "https://docs.tavily.com/docs/rest-api/api-reference",
+            "https://docs.tavily.com/documentation/api-reference/endpoint/extract",
             "https://github.com/PierreLouisLetoquart",
         ])
         .await?;

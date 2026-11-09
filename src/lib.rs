@@ -53,6 +53,18 @@
 //! let response = tavily.call(&request).await?;
 //! ```
 //!
+//! - `call_extract`: Custom extract with various options using `ExtractRequest`.
+//!
+//! ```rust,ignore
+//! use tavily::{ExtractDepth, ExtractRequest};
+//!
+//! let request = ExtractRequest::new(["https://example.com"])
+//!     .query("pricing")
+//!     .extract_depth(ExtractDepth::Advanced);
+//!
+//! let response = tavily.call_extract(&request).await?;
+//! ```
+//!
 //! ## Learn more
 //!
 //! For examples, error codes and licensing, refer to the [repository](https://github.com/PierreLouisLetoquart/tavily-rs).
