@@ -1016,6 +1016,7 @@ dependencies = [
 name = "tavily"
 version = "3.0.1"
 dependencies = [
+ "futures-util",
  "reqwest",
  "serde",
  "serde_json",

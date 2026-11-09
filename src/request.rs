@@ -180,6 +180,18 @@ pub struct ExtractRequest {
 }
 
 impl ExtractRequest {
+    pub(crate) fn urls(&self) -> &[String] {
+        &self.urls
+    }
+
+    /// A copy of this request with the same options, for another set of URLs.
+    pub(crate) fn with_urls(&self, urls: Vec<String>) -> Self {
+        Self {
+            urls,
+            ..self.clone()
+        }
+    }
+
     /// Create a new extract request for 1 to 20 URLs
     pub fn new<I, S>(urls: I) -> Self
     where

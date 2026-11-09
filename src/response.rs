@@ -105,6 +105,25 @@ impl SearchResponse {
 }
 
 impl ExtractResult {
+    /// Merge the results of several batches of the same extract request.
+    pub(crate) fn merge(batches: Vec<ExtractResult>, elapsed: std::time::Duration) -> Self {
+        let mut merged = ExtractResult {
+            results: Vec::new(),
+            failed_results: Vec::new(),
+            response_time: elapsed.as_secs_f64(),
+            usage: None,
+            request_id: None,
+        };
+        for batch in batches {
+            merged.results.extend(batch.results);
+            merged.failed_results.extend(batch.failed_results);
+            if let Some(usage) = batch.usage {
+                merged.usage.get_or_insert(Usage { credits: 0.0 }).credits += usage.credits;
+            }
+        }
+        merged
+    }
+
     /// Format the extracted pages as a numbered list of sources, ready to paste into an LLM
     /// prompt. Same format and `max_chars` budget as [`SearchResponse::to_context`]; pages
     /// without a title use their URL as title. Failed URLs are not included.

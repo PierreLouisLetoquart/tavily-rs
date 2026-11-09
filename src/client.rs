@@ -1,4 +1,6 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+use futures_util::stream::{self, StreamExt, TryStreamExt};
 
 use reqwest::header::{HeaderMap, RETRY_AFTER};
 use reqwest::{Client, ClientBuilder, StatusCode};
@@ -12,6 +14,8 @@ const DEFAULT_TIMEOUT: u64 = 30;
 const DEFAULT_MAX_RETRIES: u32 = 3;
 const BASE_URL: &str = "https://api.tavily.com";
 const API_KEY_ENV: &str = "TAVILY_API_KEY";
+const MAX_URLS_PER_EXTRACT: usize = 20;
+const MAX_CONCURRENT_EXTRACTS: usize = 4;
 const RETRYABLE_SERVER_ERRORS: [StatusCode; 4] = [
     StatusCode::INTERNAL_SERVER_ERROR,
     StatusCode::BAD_GATEWAY,
@@ -227,6 +231,51 @@ impl Tavily {
     /// Extract content from URLs with custom options using an `ExtractRequest`.
     pub async fn call_extract(&self, body: &ExtractRequest) -> Result<ExtractResult> {
         self.call_api("extract", body).await
+    }
+
+    /// Extract content from any number of URLs, working around the API limit of 20 URLs per
+    /// request. See [`Tavily::call_extract_many`].
+    pub async fn extract_many<I, S>(&self, urls: I) -> Result<ExtractResult>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str> + Into<String>,
+    {
+        self.call_extract_many(&ExtractRequest::new(urls)).await
+    }
+
+    /// Like [`Tavily::call_extract`], but for any number of URLs.
+    ///
+    /// The URLs are split into batches of 20 (the API limit) that share the request's options,
+    /// with up to 4 batches in flight at once. The results are merged into one
+    /// [`ExtractResult`]: `results` and `failed_results` keep the batch order, `usage` adds up
+    /// the credits, `response_time` is the total wall-clock time, and `request_id` is `None`
+    /// since each batch has its own. If any batch fails (e.g. invalid API key), the error is
+    /// returned. Requests with 20 URLs or fewer are sent as is.
+    ///
+    /// ```no_run
+    /// # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+    /// let urls: Vec<String> = (1..=100).map(|n| format!("https://example.com/{n}")).collect();
+    /// let response = tavily.extract_many(urls).await?;
+    /// println!("{} pages, {} failures", response.results.len(), response.failed_results.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn call_extract_many(&self, body: &ExtractRequest) -> Result<ExtractResult> {
+        if body.urls().len() <= MAX_URLS_PER_EXTRACT {
+            return self.call_extract(body).await;
+        }
+
+        let started = Instant::now();
+        let batches: Vec<ExtractResult> = stream::iter(body.urls().chunks(MAX_URLS_PER_EXTRACT))
+            .map(|urls| {
+                let request = body.with_urls(urls.to_vec());
+                async move { self.call_extract(&request).await }
+            })
+            .buffered(MAX_CONCURRENT_EXTRACTS)
+            .try_collect()
+            .await?;
+
+        Ok(ExtractResult::merge(batches, started.elapsed()))
     }
 
     pub async fn search<S>(&self, query: S) -> Result<SearchResponse>

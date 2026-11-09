@@ -9,6 +9,7 @@ repository = "https://github.com/PierreLouisLetoquart/tavily-rs"
 keywords = ["Tavily", "search-engine", "web-browser", "llm-search", "rag"]
 
 [dependencies]
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.198", features = ["derive"] }
 serde_json = "1.0"

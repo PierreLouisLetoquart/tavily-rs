@@ -91,3 +91,49 @@ async fn does_not_retry_client_errors() {
     assert!(matches!(result, Err(TavilyError::Api(ref msg)) if msg.contains("Invalid topic")));
     assert_eq!(hits.load(Ordering::SeqCst), 1);
 }
+
+#[tokio::test]
+async fn extract_many_splits_urls_into_batches_of_20() {
+    let body = r#"{"results":[{"url":"https://example.com","raw_content":"content"}],
+        "failed_results":[{"url":"https://bad.example","error":"failed"}],
+        "response_time":0.1,"usage":{"credits":1},"request_id":"abc"}"#;
+    let (base_url, hits) = serve(vec![response("200 OK", "", body)]).await;
+    let urls: Vec<String> = (0..45).map(|n| format!("https://example.com/{n}")).collect();
+
+    let result = client(&base_url, 0).extract_many(urls).await.unwrap();
+
+    assert_eq!(hits.load(Ordering::SeqCst), 3);
+    assert_eq!(result.results.len(), 3);
+    assert_eq!(result.failed_results.len(), 3);
+    assert_eq!(result.usage.unwrap().credits, 3.0);
+    assert!(result.request_id.is_none());
+}
+
+#[tokio::test]
+async fn extract_many_sends_small_requests_as_is() {
+    let body = r#"{"results":[],"response_time":0.1,"request_id":"abc"}"#;
+    let (base_url, hits) = serve(vec![response("200 OK", "", body)]).await;
+
+    let result = client(&base_url, 0)
+        .extract_many(["https://example.com"])
+        .await
+        .unwrap();
+
+    assert_eq!(hits.load(Ordering::SeqCst), 1);
+    assert_eq!(result.request_id.as_deref(), Some("abc"));
+}
+
+#[tokio::test]
+async fn extract_many_returns_batch_errors() {
+    let (base_url, _) = serve(vec![response(
+        "401 Unauthorized",
+        "",
+        r#"{"detail":{"error":"Unauthorized: missing or invalid API key."}}"#,
+    )])
+    .await;
+    let urls: Vec<String> = (0..25).map(|n| format!("https://example.com/{n}")).collect();
+
+    let result = client(&base_url, 0).extract_many(urls).await;
+
+    assert!(matches!(result, Err(TavilyError::Api(ref msg)) if msg.contains("401")));
+}
