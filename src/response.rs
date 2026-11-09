@@ -190,3 +190,43 @@ where
 
     context
 }
+
+#[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
+/// The response from the API when a crawl is made. [more info](https://docs.tavily.com/documentation/api-reference/endpoint/crawl)
+pub struct CrawlResponse {
+    pub base_url: String,
+    pub results: Vec<CrawlResult>,
+    pub response_time: f64,
+    pub usage: Option<Usage>,
+    pub request_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[non_exhaustive]
+/// A page found and extracted by a crawl.
+pub struct CrawlResult {
+    pub url: String,
+    pub raw_content: Option<String>,
+    #[serde(default)]
+    pub images: Vec<String>,
+    pub favicon: Option<String>,
+}
+
+impl CrawlResponse {
+    /// Format the crawled pages as a numbered list of sources, ready to paste into an LLM
+    /// prompt, using each page's URL as title. Same format and `max_chars` budget as
+    /// [`SearchResponse::to_context`].
+    pub fn to_context(&self, max_chars: usize) -> String {
+        build_context(
+            self.results.iter().map(|result| {
+                (
+                    result.url.as_str(),
+                    result.url.as_str(),
+                    result.raw_content.as_deref().unwrap_or_default(),
+                )
+            }),
+            max_chars,
+        )
+    }
+}

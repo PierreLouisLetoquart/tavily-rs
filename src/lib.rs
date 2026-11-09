@@ -133,10 +133,10 @@ mod response;
 pub use client::Tavily;
 pub use error::{ApiError, Result, TavilyError};
 pub use request::{
-    ExtractDepth, ExtractFormat, ExtractRequest, IncludeAnswer, IncludeRawContent, SearchDepth,
-    SearchIncludeDomainsMode, SearchRequest, SearchTimeRange, SearchTopic,
+    CrawlRequest, ExtractDepth, ExtractFormat, ExtractRequest, IncludeAnswer, IncludeRawContent,
+    SearchDepth, SearchIncludeDomainsMode, SearchRequest, SearchTimeRange, SearchTopic,
 };
 pub use response::{
-    ExtractResult, ExtractResultItem, FailedExtractResult, SearchImageResult, SearchResponse,
-    SearchResult, Usage,
+    CrawlResponse, CrawlResult, ExtractResult, ExtractResultItem, FailedExtractResult,
+    SearchImageResult, SearchResponse, SearchResult, Usage,
 };

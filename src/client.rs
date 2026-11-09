@@ -7,8 +7,8 @@ use reqwest::{Client, ClientBuilder, StatusCode};
 use tokio::time::sleep;
 
 use crate::error::{Result, TavilyError};
-use crate::request::{ExtractRequest, SearchRequest};
-use crate::response::{ExtractResult, SearchResponse};
+use crate::request::{CrawlRequest, ExtractRequest, SearchRequest};
+use crate::response::{CrawlResponse, ExtractResult, SearchResponse};
 
 const DEFAULT_TIMEOUT: u64 = 30;
 const DEFAULT_MAX_RETRIES: u32 = 3;
@@ -262,6 +262,47 @@ impl Tavily {
             .await
     }
 
+    /// Crawl a website from its root URL, extracting the content of each page found. See
+    /// [`Tavily::call_crawl`] to set the depth, limits, path filters or instructions.
+    ///
+    /// ```no_run
+    /// # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+    /// let response = tavily.crawl("https://docs.tavily.com").await?;
+    /// for page in &response.results {
+    ///     println!("{}", page.url);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn crawl<S>(&self, url: S) -> Result<CrawlResponse>
+    where
+        S: AsRef<str> + Into<String>,
+    {
+        self.call_crawl(&CrawlRequest::new(url)).await
+    }
+
+    /// Crawl a website with custom options using a [`CrawlRequest`]. Crawls can run up to 150
+    /// seconds on Tavily's side; the request waits for them even past the client timeout.
+    ///
+    /// ```no_run
+    /// # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+    /// use tavily::CrawlRequest;
+    ///
+    /// let request = CrawlRequest::new("https://docs.tavily.com")
+    ///     .instructions("Find all pages about the Python SDK")
+    ///     .select_paths(["/sdk/.*"])
+    ///     .max_depth(2)
+    ///     .limit(20);
+    ///
+    /// let response = tavily.call_crawl(&request).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn call_crawl(&self, body: &CrawlRequest) -> Result<CrawlResponse> {
+        self.call_api("crawl", body, Some(body.server_timeout()))
+            .await
+    }
+
     /// Extract content from any number of URLs, working around the API limit of 20 URLs per
     /// request. See [`Tavily::call_extract_many`].
     pub async fn extract_many<I, S>(&self, urls: I) -> Result<ExtractResult>
@@ -374,6 +415,14 @@ mod tests {
             Some(Duration::from_secs(70))
         );
         assert_eq!(tavily.request_timeout(None), None);
+
+        // Crawls run up to 150s on Tavily's side by default.
+        assert_eq!(
+            tavily.request_timeout(Some(
+                CrawlRequest::new("https://example.com").server_timeout()
+            )),
+            Some(Duration::from_secs(160))
+        );
 
         // A custom reqwest client keeps its own timeout.
         let custom = Tavily::with_reqwest_client("tvly-test", Client::new()).unwrap();

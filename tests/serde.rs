@@ -1,8 +1,8 @@
 use serde_json::json;
 use tavily::{
-    ExtractDepth, ExtractFormat, ExtractRequest, ExtractResult, IncludeAnswer, IncludeRawContent,
-    SearchDepth, SearchImageResult, SearchIncludeDomainsMode, SearchRequest, SearchResponse,
-    SearchTimeRange, SearchTopic,
+    CrawlRequest, CrawlResponse, ExtractDepth, ExtractFormat, ExtractRequest, ExtractResult,
+    IncludeAnswer, IncludeRawContent, SearchDepth, SearchImageResult, SearchIncludeDomainsMode,
+    SearchRequest, SearchResponse, SearchTimeRange, SearchTopic,
 };
 
 // Example responses taken from https://docs.tavily.com/documentation/api-reference/endpoint/search
@@ -270,5 +270,74 @@ fn extract_to_context_uses_url_when_title_is_missing() {
     assert_eq!(
         response.to_context(1_000),
         "[1] https://example.com\nSource: https://example.com\nPage content."
+    );
+}
+
+// Example from https://docs.tavily.com/documentation/api-reference/endpoint/crawl
+#[test]
+fn decodes_crawl_response() {
+    let body = json!({
+        "base_url": "docs.tavily.com",
+        "results": [
+            {
+                "url": "https://docs.tavily.com/welcome",
+                "raw_content": "Welcome - Tavily Docs",
+                "favicon": "https://mintlify.s3-us-west-1.amazonaws.com/tavilyai/_generated/favicon/apple-touch-icon.png?v=3"
+            },
+            { "url": "https://docs.tavily.com/documentation/api-credits", "raw_content": null }
+        ],
+        "response_time": 1.23,
+        "usage": { "credits": 1 },
+        "request_id": "123e4567-e89b-12d3-a456-426614174111"
+    });
+
+    let response: CrawlResponse = serde_json::from_value(body).unwrap();
+
+    assert_eq!(response.results.len(), 2);
+    assert!(response.results[0].favicon.is_some());
+    assert!(response.results[1].raw_content.is_none());
+    assert!(response.results[1].images.is_empty());
+    assert_eq!(
+        response.to_context(1_000),
+        "[1] https://docs.tavily.com/welcome\nSource: https://docs.tavily.com/welcome\nWelcome - Tavily Docs\n\n\
+         [2] https://docs.tavily.com/documentation/api-credits\nSource: https://docs.tavily.com/documentation/api-credits\n"
+    );
+}
+
+#[test]
+fn encodes_crawl_request_options() {
+    let request = CrawlRequest::new("https://docs.tavily.com")
+        .instructions("Find all pages about the Python SDK")
+        .chunks_per_source(2)
+        .max_depth(2)
+        .max_breadth(10)
+        .limit(20)
+        .select_paths(["/sdk/.*"])
+        .exclude_domains([r"^blog\.tavily\.com$"])
+        .allow_external(false)
+        .extract_depth(ExtractDepth::Advanced)
+        .format(ExtractFormat::Text)
+        .timeout(60.0);
+
+    assert_eq!(
+        serde_json::to_value(&request).unwrap(),
+        json!({
+            "url": "https://docs.tavily.com",
+            "instructions": "Find all pages about the Python SDK",
+            "chunks_per_source": 2,
+            "max_depth": 2,
+            "max_breadth": 10,
+            "limit": 20,
+            "select_paths": ["/sdk/.*"],
+            "exclude_domains": [r"^blog\.tavily\.com$"],
+            "allow_external": false,
+            "extract_depth": "advanced",
+            "format": "text",
+            "timeout": 60.0
+        })
+    );
+    assert_eq!(
+        serde_json::to_value(CrawlRequest::new("https://example.com")).unwrap(),
+        json!({ "url": "https://example.com" })
     );
 }
