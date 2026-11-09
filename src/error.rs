@@ -27,8 +27,8 @@ pub type Result<T> = core::result::Result<T, TavilyError>;
 pub enum TavilyError {
     /// The API key is missing or invalid (401).
     Unauthorized(ApiError),
-    /// The request was rejected (400 or 422), e.g. an invalid parameter or parameter
-    /// combination.
+    /// The request was rejected (400, 403 or 422), e.g. an invalid parameter, parameter
+    /// combination or unsupported URL.
     BadRequest(ApiError),
     /// Too many requests (429), still failing after all retries. `retry_after` is the delay
     /// requested by Tavily in the last response, if any.
@@ -69,7 +69,7 @@ impl TavilyError {
         let error = ApiError::new(status, body);
         match status {
             401 => TavilyError::Unauthorized(error),
-            400 | 422 => TavilyError::BadRequest(error),
+            400 | 403 | 422 => TavilyError::BadRequest(error),
             429 => TavilyError::RateLimited { error, retry_after },
             432 | 433 => TavilyError::UsageLimit(error),
             _ => TavilyError::Api(error),
@@ -184,6 +184,7 @@ mod tests {
 
         assert!(matches!(error(401), TavilyError::Unauthorized(_)));
         assert!(matches!(error(400), TavilyError::BadRequest(_)));
+        assert!(matches!(error(403), TavilyError::BadRequest(_)));
         assert!(matches!(error(422), TavilyError::BadRequest(_)));
         assert!(matches!(error(429), TavilyError::RateLimited { .. }));
         assert!(matches!(error(432), TavilyError::UsageLimit(_)));
