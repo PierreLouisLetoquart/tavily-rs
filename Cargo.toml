@@ -51,5 +51,13 @@ name = "llm_context"
 path = "examples/llm_context.rs"
 
 [[example]]
+name = "crawl"
+path = "examples/crawl.rs"
+
+[[example]]
+name = "map_then_extract"
+path = "examples/map_then_extract.rs"
+
+[[example]]
 name = "custom_client"
 path = "examples/custom_client.rs"

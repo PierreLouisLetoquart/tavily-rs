@@ -19,7 +19,7 @@ or add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tavily = "^4.0.0"
+tavily = "^4.1.0"
 ```
 
 ## Quick Start
@@ -28,8 +28,8 @@ tavily = "^4.0.0"
 use std::time::Duration;
 
 use tavily::{
-    ExtractDepth, ExtractRequest, Result, SearchDepth, SearchRequest, SearchTimeRange,
-    SearchTopic, Tavily,
+    CrawlRequest, ExtractDepth, ExtractRequest, MapRequest, Result, SearchDepth, SearchRequest,
+    SearchTimeRange, SearchTopic, Tavily,
 };
 
 #[tokio::main]
@@ -71,13 +71,29 @@ async fn main() -> Result<()> {
     let urls: Vec<String> = (1..=50).map(|n| format!("https://example.com/{n}")).collect();
     let results = tavily.extract_many(urls).await?;
 
+    // Crawl a website and extract its pages
+    let request = CrawlRequest::new("https://docs.tavily.com")
+        .instructions("Find all pages about the Python SDK")
+        .max_depth(2)
+        .limit(20);
+    let results = tavily.call_crawl(&request).await?;
+
+    // List a website's URLs, then extract only the ones you need
+    let request = MapRequest::new("https://docs.tavily.com").select_paths(["/documentation/.*"]);
+    let urls = tavily.call_map(&request).await?.results;
+    let results = tavily.extract_many(urls).await?;
+
     Ok(())
 }
 ```
 
+Crawl, map and advanced extract can run long on Tavily's side (up to 150
+seconds for crawl and map); these requests wait for Tavily's own timeout, even
+past the client timeout.
+
 ### LLM-ready context
 
-`to_context` turns search or extract results into numbered sources, capped at a
+`to_context` turns search, extract or crawl results into numbered sources, capped at a
 character budget, ready to drop into a prompt:
 
 ```rust
@@ -125,7 +141,7 @@ is needed. To use the platform's native TLS library instead:
 
 ```toml
 [dependencies]
-tavily = { version = "^4.0.0", default-features = false, features = ["native-tls"] }
+tavily = { version = "^4.1.0", default-features = false, features = ["native-tls"] }
 ```
 
 ## Upgrading to 4.0
@@ -148,6 +164,7 @@ Since 3.0.0, the API key is sent in the `Authorization: Bearer` header, and
 - **Simple Search**: Quick search queries with minimal configuration, API key from `TAVILY_API_KEY`
 - **LLM-ready Context**: `to_context` formats results as numbered, budgeted sources for prompts
 - **Batch Extract**: `extract_many` handles any number of URLs, in concurrent batches of 20
+- **Crawl & Map**: Explore a website with depth, breadth, regex path/domain filters and natural language instructions
 - **Resilient**: Retries rate limits and server errors, honoring `Retry-After`
 - **Typed Errors**: Unauthorized, bad request, rate limit and usage limit errors with Tavily's message
 - **No OpenSSL**: rustls by default, native TLS as an option
@@ -166,6 +183,8 @@ For detailed examples and API documentation, check out:
 - [API Documentation](https://docs.tavily.com/)
 - [Search Endpoint](https://docs.tavily.com/documentation/api-reference/endpoint/search)
 - [Extract Endpoint](https://docs.tavily.com/documentation/api-reference/endpoint/extract)
+- [Crawl Endpoint](https://docs.tavily.com/documentation/api-reference/endpoint/crawl)
+- [Map Endpoint](https://docs.tavily.com/documentation/api-reference/endpoint/map)
 
 ## License
 

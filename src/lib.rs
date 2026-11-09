@@ -1,7 +1,7 @@
 //! # Tavily Rust SDK
 //!
-//! The Tavily Rust SDK simplifies interaction with the [Tavily](https://tavily.com) Search and
-//! Extract APIs.
+//! The Tavily Rust SDK simplifies interaction with the [Tavily](https://tavily.com) Search,
+//! Extract, Crawl and Map APIs.
 //!
 //! Import the library and create a new instance of [`Tavily`] with your API key.
 //!
@@ -97,9 +97,39 @@
 //! - [`extract_many`](Tavily::extract_many) / [`call_extract_many`](Tavily::call_extract_many):
 //!   Extract any number of URLs, split into concurrent batches of 20 (the API limit).
 //!
+//! - [`crawl`](Tavily::crawl) / [`call_crawl`](Tavily::call_crawl): Crawl a website from a root
+//!   URL and extract each page, with [`CrawlRequest`] options.
+//!
+//! ```no_run
+//! # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+//! use tavily::CrawlRequest;
+//!
+//! let request = CrawlRequest::new("https://docs.tavily.com")
+//!     .instructions("Find all pages about the Python SDK")
+//!     .max_depth(2);
+//!
+//! let response = tavily.call_crawl(&request).await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! - [`map`](Tavily::map) / [`call_map`](Tavily::call_map): List the URLs of a website without
+//!   extracting them, with [`MapRequest`] options.
+//!
+//! ```no_run
+//! # async fn run(tavily: tavily::Tavily) -> tavily::Result<()> {
+//! let urls = tavily.map("https://docs.tavily.com").await?.results;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! Requests that can run long on Tavily's side (crawl, map, advanced extract) wait for Tavily's
+//! own timeout, even past the client timeout.
+//!
 //! ## LLM-ready context
 //!
-//! [`SearchResponse::to_context`] and [`ExtractResult::to_context`] format the results as
+//! [`SearchResponse::to_context`], [`ExtractResult::to_context`] and
+//! [`CrawlResponse::to_context`] format the results as
 //! numbered sources within a character budget, ready to drop into a prompt:
 //!
 //! ```no_run
