@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serde::{Serialize, Serializer};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -188,6 +190,15 @@ pub struct ExtractRequest {
 }
 
 impl ExtractRequest {
+    /// How long Tavily may work on this request before timing out on its side.
+    pub(crate) fn server_timeout(&self) -> Duration {
+        match (self.timeout, self.extract_depth) {
+            (Some(timeout), _) => Duration::from_secs_f32(timeout.clamp(1.0, 60.0)),
+            (None, Some(ExtractDepth::Advanced)) => Duration::from_secs(30),
+            (None, _) => Duration::from_secs(10),
+        }
+    }
+
     pub(crate) fn urls(&self) -> &[String] {
         &self.urls
     }

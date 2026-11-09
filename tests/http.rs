@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 use tavily::{Tavily, TavilyError};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -11,6 +12,11 @@ const SEARCH_BODY: &str =
 /// Serve the given raw HTTP responses one connection at a time (the last one repeats) and
 /// count the requests received.
 async fn serve(responses: Vec<String>) -> (String, Arc<AtomicUsize>) {
+    serve_after(Duration::ZERO, responses).await
+}
+
+/// Like `serve`, but wait `delay` before answering each request.
+async fn serve_after(delay: Duration, responses: Vec<String>) -> (String, Arc<AtomicUsize>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base_url = format!("http://{}", listener.local_addr().unwrap());
     let hits = Arc::new(AtomicUsize::new(0));
@@ -23,6 +29,7 @@ async fn serve(responses: Vec<String>) -> (String, Arc<AtomicUsize>) {
             let response = responses[index.min(responses.len() - 1)].clone();
             let mut buffer = [0u8; 8192];
             let _ = socket.read(&mut buffer).await;
+            tokio::time::sleep(delay).await;
             let _ = socket.write_all(response.as_bytes()).await;
             let _ = socket.shutdown().await;
         }
@@ -77,7 +84,7 @@ async fn returns_rate_limit_error_when_retries_are_exhausted() {
         Err(TavilyError::RateLimited { error, retry_after }) => {
             assert_eq!(error.status, 429);
             assert_eq!(error.message, "slow down");
-            assert_eq!(retry_after, Some(std::time::Duration::ZERO));
+            assert_eq!(retry_after, Some(Duration::ZERO));
         }
         other => panic!("expected RateLimited, got {other:?}"),
     }
@@ -149,4 +156,28 @@ async fn extract_many_returns_batch_errors() {
     let result = client(&base_url, 0).extract_many(urls).await;
 
     assert!(matches!(result, Err(TavilyError::Unauthorized(_))));
+}
+
+#[tokio::test]
+async fn extract_waits_for_tavily_server_timeout() {
+    let body = r#"{"results":[],"response_time":2.0}"#;
+    let (base_url, _) = serve_after(
+        Duration::from_secs(2),
+        vec![
+            response("200 OK", "", body),
+            response("200 OK", "", SEARCH_BODY),
+        ],
+    )
+    .await;
+    let tavily = Tavily::builder("tvly-test")
+        .base_url(&base_url)
+        .timeout(Duration::from_secs(1))
+        .max_retries(0)
+        .build()
+        .unwrap();
+
+    // Extract may run 10s on Tavily's side, so it outlives the 1s client timeout...
+    assert!(tavily.extract(["https://example.com"]).await.is_ok());
+    // ...while search keeps the client timeout.
+    assert!(matches!(tavily.search("q").await, Err(TavilyError::Http(err)) if err.is_timeout()));
 }

@@ -15,6 +15,8 @@ const DEFAULT_MAX_RETRIES: u32 = 3;
 const BASE_URL: &str = "https://api.tavily.com";
 const API_KEY_ENV: &str = "TAVILY_API_KEY";
 const MAX_URLS_PER_EXTRACT: usize = 20;
+/// Extra time given to the response on top of Tavily's server-side timeout.
+const SERVER_TIMEOUT_MARGIN: Duration = Duration::from_secs(10);
 const MAX_CONCURRENT_EXTRACTS: usize = 4;
 const RETRYABLE_SERVER_ERRORS: [StatusCode; 4] = [
     StatusCode::INTERNAL_SERVER_ERROR,
@@ -50,6 +52,9 @@ pub struct TavilyConfig {
     timeout: Duration,
     base_url: String,
     max_retries: u32,
+    /// Whether requests may wait longer than `timeout` when Tavily's server-side timeout is
+    /// longer. Off for user-provided reqwest clients, whose timeout is the user's choice.
+    extend_timeouts: bool,
 }
 
 impl Default for TavilyConfig {
@@ -59,6 +64,7 @@ impl Default for TavilyConfig {
             timeout: Duration::from_secs(DEFAULT_TIMEOUT),
             base_url: BASE_URL.to_string(),
             max_retries: DEFAULT_MAX_RETRIES,
+            extend_timeouts: true,
         }
     }
 }
@@ -156,6 +162,7 @@ impl Tavily {
     {
         let config = TavilyConfig {
             api_key: api_key.into(),
+            extend_timeouts: false,
             ..TavilyConfig::default()
         };
 
@@ -170,22 +177,41 @@ impl Tavily {
         format!("{}/{}", self.config.base_url, path)
     }
 
-    async fn call_api<T, R>(&self, endpoint: &str, request: &T) -> Result<R>
+    /// The timeout for a request that may run on Tavily's side for `server_timeout`: the
+    /// client timeout, extended to let the server time out first.
+    fn request_timeout(&self, server_timeout: Option<Duration>) -> Option<Duration> {
+        if !self.config.extend_timeouts {
+            return None;
+        }
+        server_timeout
+            .map(|timeout| timeout + SERVER_TIMEOUT_MARGIN)
+            .filter(|timeout| *timeout > self.config.timeout)
+    }
+
+    async fn call_api<T, R>(
+        &self,
+        endpoint: &str,
+        request: &T,
+        server_timeout: Option<Duration>,
+    ) -> Result<R>
     where
         T: serde::Serialize,
         R: serde::de::DeserializeOwned,
     {
         let url = self.endpoint(endpoint);
+        let timeout = self.request_timeout(server_timeout);
 
         let mut retries = 0;
         loop {
-            let sent = self
+            let mut builder = self
                 .client
                 .post(&url)
                 .bearer_auth(&self.config.api_key)
-                .json(request)
-                .send()
-                .await;
+                .json(request);
+            if let Some(timeout) = timeout {
+                builder = builder.timeout(timeout);
+            }
+            let sent = builder.send().await;
 
             // Connection failures never reached Tavily, so they are safe to retry. Timeouts are
             // not retried: the request may have been processed and its credits charged.
@@ -227,12 +253,13 @@ impl Tavily {
     }
 
     pub async fn call(&self, body: &SearchRequest) -> Result<SearchResponse> {
-        self.call_api("search", body).await
+        self.call_api("search", body, None).await
     }
 
     /// Extract content from URLs with custom options using an `ExtractRequest`.
     pub async fn call_extract(&self, body: &ExtractRequest) -> Result<ExtractResult> {
-        self.call_api("extract", body).await
+        self.call_api("extract", body, Some(body.server_timeout()))
+            .await
     }
 
     /// Extract content from any number of URLs, working around the API limit of 20 URLs per
@@ -285,7 +312,7 @@ impl Tavily {
         S: AsRef<str> + Into<String>,
     {
         let request = SearchRequest::new(query.into());
-        self.call_api("search", &request).await
+        self.call_api("search", &request, None).await
     }
 
     pub async fn answer<S>(&self, query: S) -> Result<SearchResponse>
@@ -293,7 +320,7 @@ impl Tavily {
         S: AsRef<str> + Into<String>,
     {
         let request = SearchRequest::new(query.into()).include_answer(true);
-        self.call_api("search", &request).await
+        self.call_api("search", &request, None).await
     }
 
     pub async fn extract<I, S>(&self, urls: I) -> Result<ExtractResult>
@@ -302,13 +329,15 @@ impl Tavily {
         S: AsRef<str> + Into<String>,
     {
         let request = ExtractRequest::new(urls);
-        self.call_api("extract", &request).await
+        self.call_api("extract", &request, Some(request.server_timeout()))
+            .await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::request::ExtractDepth;
 
     #[test]
     fn retry_after_reads_seconds() {
@@ -323,6 +352,32 @@ mod tests {
             "Wed, 21 Oct 2026 07:28:00 GMT".parse().unwrap(),
         );
         assert_eq!(retry_after(&headers), None);
+    }
+
+    #[test]
+    fn extends_timeout_to_tavily_server_timeout() {
+        let tavily = Tavily::builder("tvly-test").build().unwrap();
+        let extract =
+            |request: ExtractRequest| tavily.request_timeout(Some(request.server_timeout()));
+
+        // Basic extract (10s server-side) fits in the 30s client timeout.
+        assert_eq!(extract(ExtractRequest::new(["https://example.com"])), None);
+        // Advanced extract (30s) and explicit timeouts get 10s on top.
+        assert_eq!(
+            extract(
+                ExtractRequest::new(["https://example.com"]).extract_depth(ExtractDepth::Advanced)
+            ),
+            Some(Duration::from_secs(40))
+        );
+        assert_eq!(
+            extract(ExtractRequest::new(["https://example.com"]).timeout(60.0)),
+            Some(Duration::from_secs(70))
+        );
+        assert_eq!(tavily.request_timeout(None), None);
+
+        // A custom reqwest client keeps its own timeout.
+        let custom = Tavily::with_reqwest_client("tvly-test", Client::new()).unwrap();
+        assert_eq!(custom.request_timeout(Some(Duration::from_secs(150))), None);
     }
 
     #[test]
