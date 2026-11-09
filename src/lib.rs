@@ -43,14 +43,26 @@
 //! - `call`: Custom search with various options using `SearchRequest`.
 //!
 //! ```rust,ignore
-//! use tavily::SearchRequest;
+//! use tavily::{SearchDepth, SearchRequest};
 //!
-//! let request = SearchRequest::new(&api_key, "your search query")
-//!     .search_depth("advanced")
+//! let request = SearchRequest::new("your search query")
+//!     .search_depth(SearchDepth::Advanced)
 //!     .include_images(true)
 //!     .exclude_domains(vec!["example.org"]);
 //!
 //! let response = tavily.call(&request).await?;
+//! ```
+//!
+//! - `call_extract`: Custom extract with various options using `ExtractRequest`.
+//!
+//! ```rust,ignore
+//! use tavily::{ExtractDepth, ExtractRequest};
+//!
+//! let request = ExtractRequest::new(["https://example.com"])
+//!     .query("pricing")
+//!     .extract_depth(ExtractDepth::Advanced);
+//!
+//! let response = tavily.call_extract(&request).await?;
 //! ```
 //!
 //! ## Learn more
@@ -63,5 +75,11 @@ mod response;
 
 pub use client::Tavily;
 pub use error::{Result, TavilyError};
-pub use request::SearchRequest;
-pub use response::{SearchResponse, SearchResult};
+pub use request::{
+    ExtractDepth, ExtractFormat, ExtractRequest, IncludeAnswer, IncludeRawContent, SearchDepth,
+    SearchIncludeDomainsMode, SearchRequest, SearchTimeRange, SearchTopic,
+};
+pub use response::{
+    ExtractResult, ExtractResultItem, FailedExtractResult, SearchImageResult, SearchResponse,
+    SearchResult, Usage,
+};

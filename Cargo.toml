@@ -1,6 +1,6 @@
 [package]
 name = "tavily"
-version = "2.1.0"
+version = "3.0.0"
 edition = "2021"
 authors = ["Pierre-Louis Létoquart <randlgint@proton.me>"]
 description = "A tiny tool for calling Tavily's REST API in the simplest way!"
@@ -11,6 +11,7 @@ keywords = ["Tavily", "search-engine", "web-browser", "llm-search", "rag"]
 [dependencies]
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.198", features = ["derive"] }
+serde_json = "1.0"
 tokio = { version = "1.0", features = ["time"] }
 
 [dev-dependencies]
@@ -27,6 +28,10 @@ path = "examples/advanced_search.rs"
 [[example]]
 name = "basic_extract"
 path = "examples/basic_extract.rs"
+
+[[example]]
+name = "advanced_extract"
+path = "examples/advanced_extract.rs"
 
 [[example]]
 name = "custom_client"
