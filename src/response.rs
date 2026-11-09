@@ -54,6 +54,7 @@ pub struct ExtractResult {
 #[derive(Debug, Clone, Deserialize)]
 pub struct ExtractResultItem {
     pub url: String,
+    pub title: Option<String>,
     pub raw_content: String,
     #[serde(default)]
     pub images: Vec<String>,

@@ -83,6 +83,7 @@ fn decodes_partial_success_extract_response() {
     let body = json!({
         "results": [{
             "url": "https://example.com/article",
+            "title": "Example article",
             "raw_content": "Example extracted article content.",
             "images": []
         }],
@@ -97,6 +98,7 @@ fn decodes_partial_success_extract_response() {
     let response: ExtractResult = serde_json::from_value(body).unwrap();
 
     assert!(response.results[0].images.is_empty());
+    assert_eq!(response.results[0].title.as_deref(), Some("Example article"));
     assert_eq!(response.failed_results[0].url, "https://example.com/unavailable");
 }
 
@@ -116,6 +118,7 @@ fn decodes_extract_response_with_images_and_usage() {
     let response: ExtractResult = serde_json::from_value(body).unwrap();
 
     assert_eq!(response.results[0].images.len(), 1);
+    assert!(response.results[0].title.is_none());
     assert!(response.failed_results.is_empty());
     assert!(response.request_id.is_none());
     assert_eq!(response.usage.unwrap().credits, 0.0);
